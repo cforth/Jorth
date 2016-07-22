@@ -25,7 +25,7 @@ public class VirtualMachine {
 		loadCoreWords(this.dict);
 	}
 	
-	public boolean run(List<Word> ipList) {
+	public String run(List<Word> ipList) {
 		this.state = "explain" ;
 		this.ip = 0 ;
 		while(this.ip < ipList.size() - 1) {
@@ -37,11 +37,11 @@ public class VirtualMachine {
 			} 
 			
 			if("error".equals(this.state)){
-				return false ;
+				return "error" ;
 			}
 			this.ip ++ ;
 		}
-		return true ;
+		return "ok" ;
 	}
 	
 	public String explain(Word now) {
@@ -105,18 +105,8 @@ public class VirtualMachine {
 			if(word.getWplist() != null) {
 				this.returnStack.push(this.ip) ; //设置返回地址
 				this.state = "explain" ;
-				this.ip = 0 ;
-				while(this.ip < word.getWplist().size() - 1) {
-					this.next = word.getWplist().get(this.ip + 1) ;
-					if("explain".equals(this.state)) {
-						this.state = this.explain((word.getWplist().get(this.ip))) ;
-					} else if ("compile".equals(state)) {
-						this.state = this.compile((word.getWplist().get(this.ip))) ;
-					} 
-					if("error".equals(this.state)){
-						return "error" ;
-					}
-					this.ip ++ ;
+				if(!"ok".equals(this.run(word.getWplist()))){ //递归调用run方法
+					return "error" ;
 				}
 				this.ip = this.returnStack.pop();
 			}

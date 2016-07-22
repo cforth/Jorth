@@ -30,7 +30,7 @@ public class Interpreter {
 		}
 		ipList.add(this.vm.getDict().findName("END")); 
 		//将Word列表交给虚拟机去执行
-		if(this.vm.run(ipList)) {
+		if("ok".equals(this.vm.run(ipList))) {
 			this.vm.printStack();
 			System.out.println("*****执行完啦*****\n");
 		} else {
