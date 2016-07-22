@@ -4,8 +4,8 @@ package com.cfxyz.vm.util;
  * 验证字符串的合法性
  *
  */
-public final class StringUtil {
-	private StringUtil () {
+public final class VmUtil {
+	private VmUtil () {
 	}
 	
 	public static boolean validateInteger(String str) {

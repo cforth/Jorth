@@ -10,11 +10,12 @@ public class TestJorth {
 		
 		//将源代码解析后交给虚拟机执行
 		vm.parse("1 1 +") ;
-		vm.parse(": add1 1 + ;") ;
+		vm.parse("			: add1      1 	+ ;") ; //测试空白字符
 		vm.parse("add1") ;
 		vm.parse(": add2 add1 add1 ;") ;
 		vm.parse("add2") ;
 		vm.parse(".") ;
+		vm.parse("1 2 3 *(@&#*$( ") ; //测试出错
 		vm.parse(": TRUE 1 ;") ;
 		vm.parse(": FALSE 0 ;") ;
 		vm.parse(": IF COMPILE ?BRANCH ?>MARK ; IMMEDIATE") ;

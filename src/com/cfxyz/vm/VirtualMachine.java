@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import com.cfxyz.vm.util.StringUtil;
+import com.cfxyz.vm.util.VmUtil;
 import com.cfxyz.vm.word.Dict;
 import com.cfxyz.vm.word.Word;
 
@@ -14,7 +14,7 @@ public class VirtualMachine {
 	private Dict dict ; //词典
 	private List<Word> colonBuffer ; //冒号词定义时的缓存区
 	private int ip;  //指向正在执行的词
-	private String state ;
+	private String state ; //虚拟机运行状态
 	
 	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>() ;
@@ -28,7 +28,7 @@ public class VirtualMachine {
 	public void parse(String str) {
 		System.out.println("\n*****开始执行啦*****");
 		System.out.println("【执行语句】" + str);
-		String [] source = str.split(" ") ;
+		String [] source = str.trim().split("\\s+") ;
 		List<Word> ipList = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
 		for(String s : source) {
 			Word w = this.dict.findName(s) ;
@@ -39,27 +39,36 @@ public class VirtualMachine {
 			}
 		}
 		ipList.add(this.dict.findName("END"));
-		this.run(ipList);
-		printStack();
-		System.out.println("*****执行完啦*****\n");
-	}
-	
-	public void run(List<Word> ipList) {
-		this.ip = 0 ;
-		while(this.ip < ipList.size() - 1) {
-			this.execute(ipList.get(this.ip), ipList.get(this.ip + 1)) ;
-			this.ip ++ ;
+		if(this.run(ipList)) {
+			printStack();
+			System.out.println("*****执行完啦*****\n");
+		} else {
+			this.paramStack.clear();
+			this.returnStack.clear();
+			this.colonBuffer.clear();
+			printStack();
+			System.out.println("*****执行出错，三清！*****\n");
 		}
 	}
 	
-	public String execute(Word now, Word next) {
+	public boolean run(List<Word> ipList) {
+		this.ip = 0 ;
+		while(this.ip < ipList.size() - 1) {
+			if(this.execute(ipList.get(this.ip), ipList.get(this.ip + 1))) {
+				this.ip ++ ;
+			} else {
+				return false ;
+			}
+		}
+		return true ;
+	}
+	
+	public boolean execute(Word now, Word next) {
 		String symbol = now.getName();
 		String nextSymbol = next.getName();
 		if("explain".equals(this.state)) {
-			if (StringUtil.validateInteger(symbol)) {	//如果是数字就压入参数栈
+			if (VmUtil.validateInteger(symbol)) {	//如果是数字就压入参数栈
 				this.paramStack.push(Integer.parseInt(symbol)) ; 
-			} else if("END".equals(symbol)) {
-				return "END" ;
 			} else if("DUP".equals(symbol)) {
 				this.paramStack.push(this.paramStack.peek()) ;
 			} else if("]".equals(symbol)) {
@@ -117,7 +126,7 @@ public class VirtualMachine {
 					this.ip = this.returnStack.pop();
 				}
 			} else {
-				return "FAIL" ;
+				return false ;
 			}
 		} else if ("compile".equals(this.state)) {
 			Word word = this.dict.findName(symbol) ;
@@ -130,7 +139,7 @@ public class VirtualMachine {
 					this.colonBuffer.add(word);
 				}
 			} else {
-				if (StringUtil.validateInteger(symbol)) {	//如果是数字就编译成数字常数
+				if (VmUtil.validateInteger(symbol)) {	//如果是数字就编译成数字常数
 					this.colonBuffer.add(new Word(symbol)) ;
 				} else if(";".equals(symbol)) {
 					this.colonBuffer.add(this.dict.findName("END"));
@@ -140,11 +149,11 @@ public class VirtualMachine {
 				} else if("[".equals(symbol)) {
 					this.state = "explain" ;
 				} else {
-					return "FAIL" ;
+					return false ;
 				}
 			}
 		}
-		return "OK" ;
+		return true ;
 	}
 	
 	private void loadCoreWords(Dict dict){
