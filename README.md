@@ -5,4 +5,4 @@ Jorth -- Forth system by Java
 ######E-mail:cforth@cfxyz.com
 --------------------
 
-ÓÃJavaÊµÏÖForthÏµÍ³£¡£¡£¡
+ç”¨Javaå®ç°Forthç³»ç»Ÿï¼ï¼ï¼
