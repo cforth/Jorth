@@ -28,11 +28,14 @@ public class Word {
 	public Type getType() {
 		return type;
 	}
+	public void setName(String name) {
+		this.name = name;
+	}
 	@Override
 	public String toString() {
 		String wp = this.wplist == null ? "" : " , Value = " + this.wplist ; 
 		return "[Name = " + this.name + wp +"]";
 	}
 	
-	public enum Type { REVEAL, IMMEDIATE, HIDE, CORE }
+	public enum Type { REVEAL, IMMEDIATE, HIDE, CORE, VAR }
 }

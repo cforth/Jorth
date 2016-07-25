@@ -53,6 +53,19 @@ public class VirtualMachine {
 			this.paramStack.push(this.paramStack.peek()) ;
 		} else if("BYE".equals(symbol)) {
 			System.exit(0);
+		} else if("VARIABLE".equals(symbol)) {
+			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
+			List<Word> varBuffer = new ArrayList<Word>();
+			varBuffer.add(new Word("0")) ;
+			this.dict.get(this.dict.size() - 1).setWplist(varBuffer);
+			this.ip++ ;
+		} else if("@".equals(symbol)) {
+			int varIndex = this.paramStack.pop();
+			this.paramStack.push(Integer.parseInt(this.dict.get(varIndex).getWplist().get(0).getName())) ;
+		} else if("!".equals(symbol)) {
+			int varIndex = this.paramStack.pop();
+			int varValue = this.paramStack.pop();
+			this.dict.get(varIndex).getWplist().get(0).setName(String.valueOf(varValue));
 		} else if("]".equals(symbol)) {
 			return "compile" ;
 		} else if("+".equals(symbol)) {
@@ -102,7 +115,9 @@ public class VirtualMachine {
 			this.colonBuffer.add(new Word(String.valueOf(addr - this.colonBuffer.size())));
 		} else if(this.dict.containsName(symbol)) {
 			Word word = this.dict.findName(symbol) ;
-			if(word.getWplist() != null) {
+			if(word.getType().equals(Word.Type.VAR)) {
+				this.paramStack.push(this.dict.lastIndexOf(this.dict.findName(word.getName()))) ;
+			} else if(word.getWplist() != null) {
 				this.returnStack.push(this.ip) ; //设置返回地址
 				this.state = "explain" ;
 				if(!"ok".equals(this.run(word.getWplist()))){ //递归调用run方法
@@ -144,7 +159,7 @@ public class VirtualMachine {
 	
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
-				"END", "BYE", "DUP", "]", "+", "-", "DROP", "R>", ">R", ".",
+				"END", "BYE", "DUP","VARIABLE","!","@","]", "+", "-", "DROP", "R>", ">R", ".",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {

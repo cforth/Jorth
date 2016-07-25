@@ -35,6 +35,7 @@ public class TestJorth {
 		jorth.parse(": YYY BEGIN .s R> . 1 >R UNTIL ;") ;
 //		jorth.parse(": YYY BEGIN .s UNTIL ;") ;
 		jorth.parse("3 FALSE YYY");  //真假标志为FALSE时无限循环
+		jorth.parse("VARIABLE ZZ 555 ZZ ! ZZ @");  // 测试变量，应在栈上留下555
 		jorth.getVm().printDict();
 		
 		
