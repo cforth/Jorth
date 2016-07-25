@@ -16,7 +16,7 @@ public class Dict extends ArrayList<Word>{
 		return false ;
 	}
 	
-	public Word findName(String name) {
+	public Word findByName(String name) {
 		for(int x = this.size() - 1; x >= 0; x--) { //´Ó´ÊµäÄ©¶Ë¿ªÊ¼ËÑË÷
 			if(name.equals(this.get(x).getName())) {
 				return this.get(x) ;
@@ -25,7 +25,7 @@ public class Dict extends ArrayList<Word>{
 		return null ;
 	}
 	
-	public boolean setName(String name, Word word) {
+	public boolean setByName(String name, Word word) {
 		for(int x = this.size() - 1; x >= 0; x--) { //´Ó´ÊµäÄ©¶Ë¿ªÊ¼ËÑË÷
 			if(name.equals(this.get(x).getName())) {
 				this.set(x, word) ;
@@ -33,5 +33,9 @@ public class Dict extends ArrayList<Word>{
 			}
 		}
 		return false ;
+	}
+	
+	public Word getLastWord() {
+		return this.get(this.size()-1) ;
 	}
 }
