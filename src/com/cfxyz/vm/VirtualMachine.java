@@ -12,7 +12,7 @@ public class VirtualMachine {
 	private Stack<Integer> paramStack ;   //参数栈
 	private Stack<Integer> returnStack ;  //返回栈
 	private Dict dict ; //词典
-	private List<Word> colonBuffer ; //冒号词定义时的缓存区
+	private List<Word> colonValue ; //指向冒号词定义的引用
 	private int ip;  //指向正在执行的词
 	private String state ; //虚拟机运行状态
 	private Word next ; //向右边提前看一个词
@@ -20,7 +20,6 @@ public class VirtualMachine {
 	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>() ;
 		this.returnStack = new Stack<Integer>() ;
-		this.colonBuffer = new ArrayList<Word>() ; 
 		this.dict = new Dict();
 		loadCoreWords(this.dict);
 	}
@@ -84,7 +83,8 @@ public class VirtualMachine {
 		} else if(".s".equals(symbol)) {
 			System.out.println(this.paramStack.toString()) ;
 		} else if(":".equals(symbol)) {
-			this.dict.add(new Word(nextSymbol)) ;  //在词典中添加一个新的冒号词
+			this.colonValue = new ArrayList<Word>(); //分配一块区域用来保存冒号词定义
+			this.dict.add(new Word(nextSymbol, this.colonValue)) ;  //在词典中添加一个新的冒号词
 			this.ip++ ;
 			return "compile" ;
 		} else if ("?BRANCH".equals(symbol)) {
@@ -98,21 +98,21 @@ public class VirtualMachine {
 		} else if ("IMMEDIATE".equals(symbol)) {
 			this.dict.get(this.dict.size() - 1).setType(Word.Type.IMMEDIATE) ;
 		} else if("COMPILE".equals(symbol)) {
-			this.colonBuffer.add(new Word(nextSymbol));
+			this.colonValue.add(new Word(nextSymbol));
 			this.ip ++ ;
 		} else if("?>MARK".equals(symbol)) {
-			this.paramStack.push(this.colonBuffer.size()) ;
+			this.paramStack.push(this.colonValue.size()) ;
 			this.paramStack.push(0); //在参数栈留下标记
-			this.colonBuffer.add(new Word("0")) ;
+			this.colonValue.add(new Word("0")) ;
 		} else if("?<MARK".equals(symbol)) {
-			this.paramStack.push(this.colonBuffer.size()) ;
+			this.paramStack.push(this.colonValue.size()) ;
 		} else if("?>RESOLVE".equals(symbol)) {
 			int flag = this.paramStack.pop() ;
 			int addr = this.paramStack.pop() ;
-			this.colonBuffer.set(addr, new Word(String.valueOf(this.colonBuffer.size() - addr + flag)));
+			this.colonValue.set(addr, new Word(String.valueOf(this.colonValue.size() - addr + flag)));
 		} else if("?<RESOLVE".equals(symbol)) {
 			int addr = this.paramStack.pop() ;
-			this.colonBuffer.add(new Word(String.valueOf(addr - this.colonBuffer.size())));
+			this.colonValue.add(new Word(String.valueOf(addr - this.colonValue.size())));
 		} else if(this.dict.containsName(symbol)) {
 			Word word = this.dict.findName(symbol) ;
 			if(word.getType().equals(Word.Type.VAR)) {
@@ -138,15 +138,14 @@ public class VirtualMachine {
 			if(word.getType().toString().equals("IMMEDIATE")) {
 				this.explain(now) ;
 			} else {
-				this.colonBuffer.add(word);
+				this.colonValue.add(word);
 			}
 		} else {
 			if (VmUtil.validateInteger(symbol)) {	//如果是数字就编译成数字常数
-				this.colonBuffer.add(new Word(symbol)) ;
+				this.colonValue.add(new Word(symbol)) ;
 			} else if(";".equals(symbol)) {
-				this.colonBuffer.add(this.dict.findName("END"));
-				this.dict.get(this.dict.size() - 1).setWplist(this.colonBuffer); //为新的冒号词设置wplist
-				this.colonBuffer = new ArrayList<Word>() ; //增加新的冒号词后要重新申请wplist内存
+				this.colonValue.add(this.dict.findName("END"));
+				this.dict.get(this.dict.size() - 1).setWplist(this.colonValue); //为新的冒号词设置wplist
 				return "explain" ;
 			} else if("[".equals(symbol)) {
 				return "explain" ;
@@ -182,10 +181,6 @@ public class VirtualMachine {
 
 	public void setDict(Dict dict) {
 		this.dict = dict;
-	}
-	
-	public List<Word> getColonBuffer() {
-		return colonBuffer;
 	}
 	
 	public void printStack() {

@@ -36,9 +36,8 @@ public class Interpreter {
 		} else {
 			this.vm.getParamStack().clear();
 			this.vm.getReturnStack().clear();
-			this.vm.getColonBuffer().clear();
 			this.vm.printStack();
-			System.out.println("*****执行出错，三清！*****\n");
+			System.out.println("*****执行出错！*****\n");
 		}
 	}
 	

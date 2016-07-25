@@ -9,6 +9,10 @@ public class Word {
 	public Word(String name) {
 		this.name = name ;
 	}
+	public Word(String name, List<Word> wplist) {
+		this.name = name ;
+		this.wplist = wplist ;
+	}
 	public Word(String name, Type type) {
 		this.name = name ;
 		this.type = type ;
