@@ -5,15 +5,13 @@ import java.util.List;
 import java.util.Stack;
 
 import com.cfxyz.vm.util.VmUtil;
-import com.cfxyz.vm.word.Dict;
-import com.cfxyz.vm.word.Word;
 
 public class VirtualMachine {
 	private Stack<Integer> paramStack ;   //参数栈
 	private Stack<Integer> returnStack ;  //返回栈
 	private Dict dict ; //词典
 	private int ip;  //指向正在执行的词
-	private String state ; //虚拟机运行状态
+	private State state ; //虚拟机运行状态
 	private Word next ; //向右边提前看一个词
 	
 	public VirtualMachine() {
@@ -24,17 +22,17 @@ public class VirtualMachine {
 	}
 	
 	public String run(List<Word> ipList) {
-		this.state = "explain" ;
+		this.state = State.explain ;
 		this.ip = 0 ;
 		while(this.ip < ipList.size() - 1) {
 			this.next = ipList.get(this.ip + 1) ;
-			if("explain".equals(this.state)) {
-				this.state = this.explain((ipList.get(this.ip))) ;
-			} else if ("compile".equals(this.state)) {
-				this.state = this.compile((ipList.get(this.ip))) ;
+			if(State.explain.equals(this.state)) {
+				this.explain((ipList.get(this.ip))) ;
+			} else if (State.compile.equals(this.state)) {
+				this.compile((ipList.get(this.ip))) ;
 			} 
 			
-			if("error".equals(this.state)){
+			if(State.error.equals(this.state)){
 				return "error" ;
 			}
 			this.ip ++ ;
@@ -42,7 +40,7 @@ public class VirtualMachine {
 		return "ok" ;
 	}
 	
-	public String explain(Word now) {
+	public void explain(Word now) {
 		String symbol = now.getName();
 		String nextSymbol = this.next.getName();
 		if (VmUtil.validateInteger(symbol)) {	//如果是数字就压入参数栈
@@ -65,7 +63,7 @@ public class VirtualMachine {
 			int varValue = this.paramStack.pop();
 			this.dict.get(varIndex).getWplist().get(0).setName(String.valueOf(varValue));
 		} else if("]".equals(symbol)) {
-			return "compile" ;
+			this.state = State.compile ;
 		} else if("+".equals(symbol)) {
 			this.paramStack.push(this.paramStack.pop() + this.paramStack.pop()) ;
 		} else if("-".equals(symbol)) {
@@ -84,7 +82,7 @@ public class VirtualMachine {
 		} else if(":".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, new ArrayList<Word>())) ;  //在词典中添加一个新的冒号词
 			this.ip++ ;
-			return "compile" ;
+			this.state = State.compile ;
 		} else if ("?BRANCH".equals(symbol)) {
 			if(this.paramStack.pop() == 0) {
 				this.ip += Integer.parseInt(nextSymbol) ;
@@ -117,24 +115,24 @@ public class VirtualMachine {
 				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName()))) ;
 			} else if(word.getWplist() != null) {
 				this.returnStack.push(this.ip) ; //设置返回地址
-				this.state = "explain" ;
+				this.state = State.explain ;
 				if(!"ok".equals(this.run(word.getWplist()))){ //递归调用run方法
-					return "error" ;
+					this.state = State.error ;
 				}
 				this.ip = this.returnStack.pop();
 			}
 		} else {
-			return "error" ;
+			this.state = State.error ;
 		}
-		return "explain" ;
 	}
 	
-	public String compile(Word now) {
+	public void compile(Word now) {
 		String symbol = now.getName();
 		Word word = this.dict.findByName(symbol) ;
 		if(word != null) {
 			if(word.getType().toString().equals("IMMEDIATE")) {
 				this.explain(now) ;
+				this.state = State.compile ;
 			} else {
 				this.dict.getLastWord().getWplist().add(word);
 			}
@@ -144,14 +142,13 @@ public class VirtualMachine {
 			} else if(";".equals(symbol)) {
 				this.dict.getLastWord().getWplist().add(this.dict.findByName("END"));
 				this.dict.get(this.dict.size() - 1).setWplist(this.dict.getLastWord().getWplist()); //为新的冒号词设置wplist
-				return "explain" ;
+				this.state = State.explain ;
 			} else if("[".equals(symbol)) {
-				return "explain" ;
+				this.state = State.explain ;
 			} else {
-				return "error" ;
+				this.state = State.error ;
 			}
 		}
-		return "compile" ;
 	}
 	
 	private void loadCoreWords(Dict dict){

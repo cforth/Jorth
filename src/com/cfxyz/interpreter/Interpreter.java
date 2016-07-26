@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cfxyz.vm.VirtualMachine;
-import com.cfxyz.vm.word.Word;
+import com.cfxyz.vm.Word;
 
 public class Interpreter {
 	private VirtualMachine vm ;

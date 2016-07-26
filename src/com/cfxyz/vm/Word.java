@@ -1,4 +1,4 @@
-package com.cfxyz.vm.word;
+package com.cfxyz.vm;
 
 import java.util.List;
 
