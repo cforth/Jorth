@@ -29,15 +29,17 @@ public class TestJorth {
 		jorth.parse(": DO COMPILE 2DUP COMPILE > COMPILE ?BRANCH ?<MARK ?>MARK ; IMMEDIATE") ;
 		jorth.parse(": LOOP COMPILE 1 COMPILE + COMPILE BRANCH 1 + ?>RESOLVE 3 - ?<RESOLVE COMPILE DROP COMPILE DROP ; IMMEDIATE") ;
 		jorth.parse(": XXX IF + + ELSE + + + + THEN [ .s ] 1 - ;") ;
+		jorth.parse(": tt DO .s LOOP ;");
 		jorth.parse("1 2 3 TRUE XXX") ;
 		jorth.parse("7 8 9 10 FALSE XXX") ;
 		jorth.parse(".") ;
 		jorth.parse(": YYY BEGIN .s TRUE UNTIL ;") ;
 		jorth.parse("3 YYY");  //真假标志为FALSE时无限循环
 		jorth.parse("VARIABLE ZZ 555 ZZ ! ZZ @");  // 测试变量，应在栈上留下555
+		jorth.parse(": WORDS SIZE 0 DO DUP PRINTWORD LOOP DROP");
+		jorth.parse("WORDS");
 		jorth.parse(": MAIN_LOOP BEGIN READ INTERPRET FALSE  UNTIL ;");
-		jorth.parse(": tt DO .s LOOP ;");
-		jorth.getVm().printDict();
+		jorth.parse("WORDS");
 		jorth.parse("MAIN_LOOP");
 
 	}

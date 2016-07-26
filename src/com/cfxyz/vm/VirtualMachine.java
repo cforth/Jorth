@@ -146,6 +146,13 @@ public class VirtualMachine {
 			this.paramStack.push(this.returnStack.pop()) ;
 		} else if(">R".equals(symbol)) {
 			this.returnStack.push(this.paramStack.pop()) ;
+		} else if("SEE".equals(symbol)) {
+			System.out.println(this.dict.findByName(nextSymbol)) ;
+			this.ip ++ ;
+		} else if("SIZE".equals(symbol)) { //词典长度
+			this.paramStack.push(this.dict.size()) ;
+		} else if("PRINTWORD".equals(symbol)) { //将栈顶数字作为词典中词的下标，打印出词的定义
+			System.out.println(this.dict.get(this.paramStack.pop())) ;
 		} else if(".".equals(symbol)) {
 			System.out.println(this.paramStack.pop()) ;
 		} else if(".s".equals(symbol)) {
@@ -226,7 +233,7 @@ public class VirtualMachine {
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
 				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
-				">", "<", "=", "R>", ">R", ".", "SWAP","OVER",
+				">", "<", "=", "R>", ">R", ".", "SWAP","OVER","SEE","SIZE","PRINTWORD",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
@@ -254,16 +261,5 @@ public class VirtualMachine {
 	public void printStack() {
 		System.out.println("【参数栈】" + this.getParamStack().toString());
 		System.out.println("【返回栈】" + this.getReturnStack().toString());
-	}
-	
-	public void printDict() {
-		for (Word w : this.getDict()) {   
-            System.out.print("key= " + w.getName());   
-            if(w.getWplist() != null) {
-            	System.out.println(", value= " + w.getWplist());
-            } else {
-            	System.out.println();
-            }
-        }  
 	}
 }
