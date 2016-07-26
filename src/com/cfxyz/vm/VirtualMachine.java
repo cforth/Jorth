@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import com.cfxyz.interpreter.Interpreter;
 import com.cfxyz.vm.util.VmUtil;
 
 public class VirtualMachine {
@@ -17,12 +16,15 @@ public class VirtualMachine {
 	private State state ; //虚拟机运行状态
 	private Word next ; //向右边提前看一个词
 	private String source = null; //指向当前读入的源代码字符串
+	BufferedReader localReader;
 	
 	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>() ;
 		this.returnStack = new Stack<Integer>() ;
 		this.dict = new Dict();
 		loadCoreWords(this.dict);
+		this.localReader = new BufferedReader(
+                new InputStreamReader(System.in));
 	}
 	
 	public String run(List<Word> ipList) {
@@ -55,17 +57,38 @@ public class VirtualMachine {
 			System.exit(0);
 		}  else if("READ".equals(symbol)) {
 			// 测试从标准输入读取代码
-			BufferedReader localReader = new BufferedReader(
-	                new InputStreamReader(System.in));
 			try {
-				this.source = localReader.readLine();
+				this.source = this.localReader.readLine();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else if("INTERPRET".equals(symbol)) {
 			this.returnStack.push(this.ip) ; //设置返回地址
-			Interpreter interp = new Interpreter(this) ;
-			interp.parse(this.source) ;
+			System.out.println("\n*****开始执行啦*****");
+			System.out.println("【执行语句】" + this.source);
+			
+			String [] source = this.source.trim().split("\\s+") ;
+			List<Word> ipList = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
+			//文本解释器分离出一行源代码中的每个词，建立一个Word列表
+			for(String s : source) {
+				Word w = this.getDict().findByName(s) ;
+				if(w != null) {
+					ipList.add(w) ;
+				} else {  //如果词典中没有该词，则新建一个临时词来存放
+					ipList.add(new Word(s));
+				}
+			}
+			ipList.add(this.getDict().findByName("END")); 
+			//将Word列表交给虚拟机去执行
+			if("ok".equals(this.run(ipList))) {
+				this.printStack();
+				System.out.println("*****执行完啦*****\n");
+			} else {
+				this.getParamStack().clear();
+				this.getReturnStack().clear();
+				this.printStack();
+				System.out.println("*****执行出错！*****\n");
+			}
 			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
