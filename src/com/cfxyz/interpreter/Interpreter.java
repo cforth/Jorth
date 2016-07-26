@@ -31,13 +31,11 @@ public class Interpreter {
 		ipList.add(this.vm.getDict().findByName("END")); 
 		//将Word列表交给虚拟机去执行
 		if("ok".equals(this.vm.run(ipList))) {
-			this.vm.printStack();
-			System.out.println("*****执行完啦*****\n");
+			System.out.println("OK\n");
 		} else {
 			this.vm.getParamStack().clear();
 			this.vm.getReturnStack().clear();
-			this.vm.printStack();
-			System.out.println("*****执行出错！*****\n");
+			System.out.println("ERROR!\n");
 		}
 	}
 	

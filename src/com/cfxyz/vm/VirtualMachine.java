@@ -81,13 +81,11 @@ public class VirtualMachine {
 			ipList.add(this.getDict().findByName("END")); 
 			//将Word列表交给虚拟机去执行
 			if("ok".equals(this.run(ipList))) {
-				this.printStack();
-				System.out.println("*****执行完啦*****\n");
+				System.out.println("OK\n");
 			} else {
 				this.getParamStack().clear();
 				this.getReturnStack().clear();
-				this.printStack();
-				System.out.println("*****执行出错！*****\n");
+				System.out.println("ERROR!\n");
 			}
 			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
@@ -110,8 +108,40 @@ public class VirtualMachine {
 		} else if("-".equals(symbol)) {
 			int temp = this.paramStack.pop() ;
 			this.paramStack.push(this.paramStack.pop() - temp) ;
+		} else if(">".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			if(this.paramStack.pop() > temp) {
+				this.paramStack.push(1) ;
+			} else {
+				this.paramStack.push(0);
+			}
+		} else if("<".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			if(this.paramStack.pop() < temp) {
+				this.paramStack.push(1) ;
+			} else {
+				this.paramStack.push(0);
+			}
+		} else if("=".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			if(this.paramStack.pop() == temp) {
+				this.paramStack.push(1) ;
+			} else {
+				this.paramStack.push(0);
+			}
 		} else if("DROP".equals(symbol)) {
 			this.paramStack.pop() ;
+		} else if("SWAP".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			int temp2 = this.paramStack.pop() ;
+			this.paramStack.push(temp2) ;
+			this.paramStack.push(temp) ;
+		} else if("OVER".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			int temp2 = this.paramStack.pop() ;
+			this.paramStack.push(temp2) ;
+			this.paramStack.push(temp) ;
+			this.paramStack.push(temp2) ;
 		} else if("R>".equals(symbol)) {
 			this.paramStack.push(this.returnStack.pop()) ;
 		} else if(">R".equals(symbol)) {
@@ -119,7 +149,8 @@ public class VirtualMachine {
 		} else if(".".equals(symbol)) {
 			System.out.println(this.paramStack.pop()) ;
 		} else if(".s".equals(symbol)) {
-			System.out.println(this.paramStack.toString()) ;
+			System.out.println("DS> " + this.paramStack.toString()) ;
+			System.out.println("RS> " + this.returnStack.toString()) ;
 		} else if(":".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, new ArrayList<Word>())) ;  //在词典中添加一个新的冒号词
 			this.ip++ ;
@@ -194,7 +225,8 @@ public class VirtualMachine {
 	
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
-				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP", "R>", ">R", ".",
+				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
+				">", "<", "=", "R>", ">R", ".", "SWAP","OVER",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {

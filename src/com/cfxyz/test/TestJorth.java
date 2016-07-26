@@ -20,11 +20,14 @@ public class TestJorth {
 		jorth.parse("1 2 3 *(@&#*$( ") ; //测试出错
 		jorth.parse(": TRUE 1 ;") ;
 		jorth.parse(": FALSE 0 ;") ;
+		jorth.parse(": 2DUP OVER OVER ;") ;
 		jorth.parse(": IF COMPILE ?BRANCH ?>MARK ; IMMEDIATE") ;
 		jorth.parse(": ELSE COMPILE BRANCH  1 + ?>RESOLVE ?>MARK ; IMMEDIATE") ;
 		jorth.parse(": THEN ?>RESOLVE ; IMMEDIATE") ;
 		jorth.parse(": BEGIN ?<MARK ; IMMEDIATE") ;
 		jorth.parse(": UNTIL COMPILE ?BRANCH ?<RESOLVE ; IMMEDIATE") ;
+		jorth.parse(": DO COMPILE 2DUP COMPILE > COMPILE ?BRANCH ?<MARK ?>MARK ; IMMEDIATE") ;
+		jorth.parse(": LOOP COMPILE 1 COMPILE + COMPILE BRANCH 1 + ?>RESOLVE 3 - ?<RESOLVE COMPILE DROP COMPILE DROP ; IMMEDIATE") ;
 		jorth.parse(": XXX IF + + ELSE + + + + THEN [ .s ] 1 - ;") ;
 		jorth.parse("1 2 3 TRUE XXX") ;
 		jorth.parse("7 8 9 10 FALSE XXX") ;
@@ -33,6 +36,7 @@ public class TestJorth {
 		jorth.parse("3 YYY");  //真假标志为FALSE时无限循环
 		jorth.parse("VARIABLE ZZ 555 ZZ ! ZZ @");  // 测试变量，应在栈上留下555
 		jorth.parse(": MAIN_LOOP BEGIN READ INTERPRET FALSE  UNTIL ;");
+		jorth.parse(": tt DO .s LOOP ;");
 		jorth.getVm().printDict();
 		jorth.parse("MAIN_LOOP");
 
