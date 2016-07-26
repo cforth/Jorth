@@ -1,9 +1,12 @@
 package com.cfxyz.vm;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import com.cfxyz.interpreter.Interpreter;
 import com.cfxyz.vm.util.VmUtil;
 
 public class VirtualMachine {
@@ -13,6 +16,7 @@ public class VirtualMachine {
 	private int ip;  //指向正在执行的词
 	private State state ; //虚拟机运行状态
 	private Word next ; //向右边提前看一个词
+	private String source = null; //指向当前读入的源代码字符串
 	
 	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>() ;
@@ -49,6 +53,20 @@ public class VirtualMachine {
 			this.paramStack.push(this.paramStack.peek()) ;
 		} else if("BYE".equals(symbol)) {
 			System.exit(0);
+		}  else if("READ".equals(symbol)) {
+			// 测试从标准输入读取代码
+			BufferedReader localReader = new BufferedReader(
+	                new InputStreamReader(System.in));
+			try {
+				this.source = localReader.readLine();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else if("INTERPRET".equals(symbol)) {
+			this.returnStack.push(this.ip) ; //设置返回地址
+			Interpreter interp = new Interpreter(this) ;
+			interp.parse(this.source) ;
+			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
 			List<Word> varBuffer = new ArrayList<Word>();
@@ -153,7 +171,7 @@ public class VirtualMachine {
 	
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
-				"END", "BYE", "DUP","VARIABLE","!","@","]", "+", "-", "DROP", "R>", ">R", ".",
+				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP", "R>", ">R", ".",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
