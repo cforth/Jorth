@@ -8,7 +8,7 @@ import java.util.Stack;
 
 import com.cfxyz.vm.util.VmUtil;
 
-public class VirtualMachine {
+public class Jorth {
 	private Stack<Integer> paramStack ;   //参数栈
 	private Stack<Integer> returnStack ;  //返回栈
 	private Dict dict ; //词典
@@ -19,7 +19,10 @@ public class VirtualMachine {
 	private List<Word> wordListBuffer = null ; //将输入字符串转为Word列表后保存起来 
 	private BufferedReader localReader = null ;
 	
-	public VirtualMachine() {
+	/**
+	 * Forth的虚拟机初始化
+	 */
+	public Jorth() {
 		this.paramStack = new Stack<Integer>() ;
 		this.returnStack = new Stack<Integer>() ;
 		this.dict = new Dict();
@@ -29,36 +32,50 @@ public class VirtualMachine {
 	}
 	
 	/**
-	 * 将一行Forth代码解释后执行
+	 * Forth的解释程序
 	 * @param str
 	 */
-	public void parse(String str) {
-		System.out.println("【执行语句】" + str);
+	public void interpret(String str) {
+		this.source = str ;
+		parse(this.source) ;
+		run(this.wordListBuffer) ;
 		
-		String [] source = str.trim().split("\\s+") ;
-		List<Word> ipList = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
-		//文本解释器分离出一行源代码中的每个词，建立一个Word列表
-		for(String s : source) {
-			Word w = this.dict.findByName(s) ;
-			if(w != null) {
-				ipList.add(w) ;
-			} else {  //如果词典中没有该词，则新建一个临时词来存放
-				ipList.add(new Word(s));
-			}
-		}
-		ipList.add(this.dict.findByName("END")); 
-		//将Word列表交给虚拟机去执行
-		if("ok".equals(this.run(ipList))) {
-			System.out.println("OK\n");
-		}
 	}
 	
 	/**
-	 * 将经过解析后符号列表运行
+	 * 将一行Forth代码转换为Word列表
+	 * @param line
+	 */
+	public void parse(String line) {
+		System.out.println("【执行语句】" + line);
+		
+		String [] source = line.trim().split("\\s+") ;
+		this.wordListBuffer = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
+		//文本解释器分离出一行源代码中的每个词，建立一个Word列表
+		boolean flag = true ; //flag为假时，忽略当前词，用于注释
+		for(String s : source) {
+			if (flag) {
+				Word w = this.dict.findByName(s) ;
+				if(w != null) {
+					this.wordListBuffer.add(w) ;
+				} else if('(' == s.charAt(0)) {
+					flag = false ; //'('与')'之间内容为注释
+				} else {  //如果词典中没有该词，则新建一个临时词来存放
+					this.wordListBuffer.add(new Word(s));
+				}
+			} else if (')' == s.charAt(s.length()-1)) {
+				flag = true ; 
+			}
+		}
+		this.wordListBuffer.add(this.dict.findByName("END")); 
+	}
+	
+	/**
+	 * 将Word列表执行
 	 * @param ipList
 	 * @return
 	 */
-	public String run(List<Word> ipList) {
+	public void run(List<Word> ipList) {
 		this.state = State.explain ;
 		this.ip = 0 ;
 		while(this.ip < ipList.size() - 1) {
@@ -72,16 +89,14 @@ public class VirtualMachine {
 			if(State.error.equals(this.state)){
 				this.paramStack.clear();
 				System.out.println("ERROR!\n");
-				this.state = State.explain ;  //将状态切换回解释态，由于错误恢复
-				return "error" ;
+				this.state = State.explain ;  //将状态切换回解释态，用于错误恢复
 			} 
 			this.ip ++ ;
 		}
-		return "ok" ;
 	}
 	
 	/**
-	 * 执行当前词
+	 * 执行当前Word词
 	 * @param now
 	 */
 	public void explain(Word now) {
@@ -93,28 +108,15 @@ public class VirtualMachine {
 			this.paramStack.push(this.paramStack.peek()) ;
 		} else if("BYE".equals(symbol)) {
 			System.exit(0);
-		}  else if("READ".equals(symbol)) {
+		}  else if("PARSE".equals(symbol)) {
 			// 测试从标准输入读取代码
 			try {
 				this.source = this.localReader.readLine();
-				System.out.println("【执行语句】" + this.source);
-				
-				String [] source = this.source.trim().split("\\s+") ;
-				wordListBuffer = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
-				//文本解释器分离出一行源代码中的每个词，建立一个Word列表
-				for(String s : source) {
-					Word w = this.dict.findByName(s) ;
-					if(w != null) {
-						wordListBuffer.add(w) ;
-					} else {  //如果词典中没有该词，则新建一个临时词来存放
-						wordListBuffer.add(new Word(s));
-					}
-				}
-				wordListBuffer.add(this.dict.findByName("END")); 
+				parse(this.source) ;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} else if("INTERPRET".equals(symbol)) {
+		} else if("RUN".equals(symbol)) {
 			this.returnStack.push(this.ip) ; //设置返回地址
 			run(this.wordListBuffer);
 			this.ip = this.returnStack.pop();
@@ -179,6 +181,9 @@ public class VirtualMachine {
 			this.paramStack.push(temp2) ;
 		} else if("EMIT".equals(symbol)) {
 			System.out.print((char)(int)this.paramStack.pop());
+		} else if(".\"".equals(symbol)) {  //打印出后面字符串，目前不支持字符串中有空格,并且不能再冒号定义中使用
+			System.out.print(nextSymbol.replace("\"", ""));
+			this.ip ++ ;
 		} else if("R>".equals(symbol)) {
 			this.paramStack.push(this.returnStack.pop()) ;
 		} else if(">R".equals(symbol)) {
@@ -231,10 +236,7 @@ public class VirtualMachine {
 				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName()))) ;
 			} else if(word.getWplist() != null) {
 				this.returnStack.push(this.ip) ; //设置返回地址
-				this.state = State.explain ;
-				if(!"ok".equals(this.run(word.getWplist()))){ //递归调用run方法
-					this.state = State.error ;
-				}
+				run(word.getWplist()) ;//递归调用run方法
 				this.ip = this.returnStack.pop();
 			}
 		} else {
@@ -243,7 +245,7 @@ public class VirtualMachine {
 	}
 	
 	/**
-	 * 编译当前词
+	 * 编译当前Word词
 	 * @param now
 	 */
 	public void compile(Word now) {
@@ -278,8 +280,8 @@ public class VirtualMachine {
 	 */
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
-				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
-				">", "<", "=", "R>", ">R", ".", "SWAP","OVER","SEE","SIZE","PRINTWORD","*", "/",
+				"END", "BYE", "DUP","PARSE","RUN","VARIABLE","!","@","]", "+", "-", "DROP",
+				">", "<", "=", "R>", ">R", ".", ".\"","SWAP","OVER","SEE","SIZE","PRINTWORD","*", "/",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK","EMIT",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
