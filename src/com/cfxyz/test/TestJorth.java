@@ -1,5 +1,10 @@
 package com.cfxyz.test;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+
 import com.cfxyz.interpreter.Interpreter;
 import com.cfxyz.vm.VirtualMachine;
 
@@ -9,6 +14,8 @@ public class TestJorth {
 		//初始化虚拟机和文本解释器
 		VirtualMachine vm = new VirtualMachine() ;
 		Interpreter jorth = new Interpreter(vm) ;
+		loadLib(jorth, "lib.fs") ;
+ 
 		
 		//将源代码解析后交给虚拟机执行
 		jorth.parse("1 1 +") ;
@@ -18,16 +25,6 @@ public class TestJorth {
 		jorth.parse("add2") ;
 		jorth.parse(".") ;
 		jorth.parse("1 2 3 *(@&#*$( ") ; //测试出错
-		jorth.parse(": TRUE 1 ;") ;
-		jorth.parse(": FALSE 0 ;") ;
-		jorth.parse(": 2DUP OVER OVER ;") ;
-		jorth.parse(": IF COMPILE ?BRANCH ?>MARK ; IMMEDIATE") ;
-		jorth.parse(": ELSE COMPILE BRANCH  1 + ?>RESOLVE ?>MARK ; IMMEDIATE") ;
-		jorth.parse(": THEN ?>RESOLVE ; IMMEDIATE") ;
-		jorth.parse(": BEGIN ?<MARK ; IMMEDIATE") ;
-		jorth.parse(": UNTIL COMPILE ?BRANCH ?<RESOLVE ; IMMEDIATE") ;
-		jorth.parse(": DO ?<MARK COMPILE 2DUP COMPILE >R COMPILE >R COMPILE > COMPILE ?BRANCH  ?>MARK ; IMMEDIATE") ;
-		jorth.parse(": LOOP COMPILE R> COMPILE R> COMPILE 1 COMPILE + COMPILE BRANCH 1 + ?>RESOLVE ?<RESOLVE COMPILE R> COMPILE R> COMPILE DROP COMPILE DROP ; IMMEDIATE") ;
 		jorth.parse(": XXX IF + + ELSE + + + + THEN [ .s ] 1 - ;") ;
 		jorth.parse(": tt DO .s LOOP ;");
 		jorth.parse("1 2 3 TRUE XXX") ;
@@ -36,11 +33,31 @@ public class TestJorth {
 		jorth.parse(": YYY BEGIN .s TRUE UNTIL ;") ;
 		jorth.parse("3 YYY");  //真假标志为FALSE时无限循环
 		jorth.parse("VARIABLE ZZ 555 ZZ ! ZZ @");  // 测试变量，应在栈上留下555
-		jorth.parse(": WORDS SIZE 0 DO R> R>  DUP PRINTWORD >R >R LOOP DROP");
 		jorth.parse(": average DUP >R 1 DO + LOOP R> / ;");
-		jorth.parse(": MAIN_LOOP BEGIN READ INTERPRET FALSE  UNTIL ;");
 		jorth.parse("WORDS");
 		jorth.parse("MAIN_LOOP");
-
+	}
+	
+	public static void loadLib(Interpreter jorth, String filePath) {
+		
+		try {
+            String encoding="UTF-8";
+            File file=new File(filePath);
+            if(file.isFile() && file.exists()){ //判断文件是否存在
+                InputStreamReader read = new InputStreamReader(
+                new FileInputStream(file),encoding);//考虑到编码格式
+                BufferedReader bufferedReader = new BufferedReader(read);
+                String lineTxt = null;
+                while((lineTxt = bufferedReader.readLine()) != null){
+                	jorth.parse(lineTxt);
+                }
+                read.close();
+		    }else{
+		        System.out.println("找不到指定的文件");
+		    }
+		} catch (Exception e) {
+		    System.out.println("读取文件内容出错");
+		    e.printStackTrace();
+		}
 	}
 }

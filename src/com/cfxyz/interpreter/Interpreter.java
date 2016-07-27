@@ -14,7 +14,6 @@ public class Interpreter {
 	}
 
 	public void parse(String str) {
-		System.out.println("\n*****开始执行啦*****");
 		System.out.println("【执行语句】" + str);
 		
 		String [] source = str.trim().split("\\s+") ;

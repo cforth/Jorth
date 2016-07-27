@@ -39,8 +39,9 @@ public class VirtualMachine {
 			} 
 			
 			if(State.error.equals(this.state)){
-				return "error" ;
-			}
+				this.paramStack.clear();
+				System.out.println("ERROR!\n");
+			} 
 			this.ip ++ ;
 		}
 		return "ok" ;
@@ -64,7 +65,6 @@ public class VirtualMachine {
 			}
 		} else if("INTERPRET".equals(symbol)) {
 			this.returnStack.push(this.ip) ; //设置返回地址
-			System.out.println("\n*****开始执行啦*****");
 			System.out.println("【执行语句】" + this.source);
 			
 			String [] source = this.source.trim().split("\\s+") ;
@@ -80,12 +80,7 @@ public class VirtualMachine {
 			}
 			ipList.add(this.getDict().findByName("END")); 
 			//将Word列表交给虚拟机去执行
-			if("ok".equals(this.run(ipList))) {
-				System.out.println("OK\n");
-			} else {
-				this.getParamStack().clear();
-				System.out.println("ERROR!\n");
-			}
+			this.run(ipList);
 			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
