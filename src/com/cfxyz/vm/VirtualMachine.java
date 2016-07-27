@@ -27,6 +27,36 @@ public class VirtualMachine {
                 new InputStreamReader(System.in));
 	}
 	
+	/**
+	 * 将一行Forth代码解释后执行
+	 * @param str
+	 */
+	public void parse(String str) {
+		System.out.println("【执行语句】" + str);
+		
+		String [] source = str.trim().split("\\s+") ;
+		List<Word> ipList = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
+		//文本解释器分离出一行源代码中的每个词，建立一个Word列表
+		for(String s : source) {
+			Word w = this.dict.findByName(s) ;
+			if(w != null) {
+				ipList.add(w) ;
+			} else {  //如果词典中没有该词，则新建一个临时词来存放
+				ipList.add(new Word(s));
+			}
+		}
+		ipList.add(this.dict.findByName("END")); 
+		//将Word列表交给虚拟机去执行
+		if("ok".equals(this.run(ipList))) {
+			System.out.println("OK\n");
+		}
+	}
+	
+	/**
+	 * 将经过解析后符号列表运行
+	 * @param ipList
+	 * @return
+	 */
 	public String run(List<Word> ipList) {
 		this.state = State.explain ;
 		this.ip = 0 ;
@@ -41,12 +71,18 @@ public class VirtualMachine {
 			if(State.error.equals(this.state)){
 				this.paramStack.clear();
 				System.out.println("ERROR!\n");
+				this.state = State.explain ;  //将状态切换回解释态，由于错误恢复
+				return "error" ;
 			} 
 			this.ip ++ ;
 		}
 		return "ok" ;
 	}
 	
+	/**
+	 * 执行当前词
+	 * @param now
+	 */
 	public void explain(Word now) {
 		String symbol = now.getName();
 		String nextSymbol = this.next.getName();
@@ -65,22 +101,7 @@ public class VirtualMachine {
 			}
 		} else if("INTERPRET".equals(symbol)) {
 			this.returnStack.push(this.ip) ; //设置返回地址
-			System.out.println("【执行语句】" + this.source);
-			
-			String [] source = this.source.trim().split("\\s+") ;
-			List<Word> ipList = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
-			//文本解释器分离出一行源代码中的每个词，建立一个Word列表
-			for(String s : source) {
-				Word w = this.getDict().findByName(s) ;
-				if(w != null) {
-					ipList.add(w) ;
-				} else {  //如果词典中没有该词，则新建一个临时词来存放
-					ipList.add(new Word(s));
-				}
-			}
-			ipList.add(this.getDict().findByName("END")); 
-			//将Word列表交给虚拟机去执行
-			this.run(ipList);
+			parse(this.source);
 			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
@@ -204,6 +225,10 @@ public class VirtualMachine {
 		}
 	}
 	
+	/**
+	 * 编译当前词
+	 * @param now
+	 */
 	public void compile(Word now) {
 		String symbol = now.getName();
 		Word word = this.dict.findByName(symbol) ;
@@ -229,6 +254,11 @@ public class VirtualMachine {
 		}
 	}
 	
+	/**
+	 * 加载核心词到词典中
+	 * 仅仅在词典中添加核心词的空词，核心词是通过explain方法模拟执行
+	 * @param dict
+	 */
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
 				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
