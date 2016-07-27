@@ -16,7 +16,8 @@ public class VirtualMachine {
 	private State state ; //虚拟机运行状态
 	private Word next ; //向右边提前看一个词
 	private String source = null; //指向当前读入的源代码字符串
-	BufferedReader localReader;
+	private List<Word> wordListBuffer = null ; //将输入字符串转为Word列表后保存起来 
+	private BufferedReader localReader = null ;
 	
 	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>() ;
@@ -96,12 +97,26 @@ public class VirtualMachine {
 			// 测试从标准输入读取代码
 			try {
 				this.source = this.localReader.readLine();
+				System.out.println("【执行语句】" + this.source);
+				
+				String [] source = this.source.trim().split("\\s+") ;
+				wordListBuffer = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
+				//文本解释器分离出一行源代码中的每个词，建立一个Word列表
+				for(String s : source) {
+					Word w = this.dict.findByName(s) ;
+					if(w != null) {
+						wordListBuffer.add(w) ;
+					} else {  //如果词典中没有该词，则新建一个临时词来存放
+						wordListBuffer.add(new Word(s));
+					}
+				}
+				wordListBuffer.add(this.dict.findByName("END")); 
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else if("INTERPRET".equals(symbol)) {
 			this.returnStack.push(this.ip) ; //设置返回地址
-			parse(this.source);
+			run(this.wordListBuffer);
 			this.ip = this.returnStack.pop();
 		} else if("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)) ;  //在词典中添加一个新的变量
@@ -162,6 +177,8 @@ public class VirtualMachine {
 			this.paramStack.push(temp2) ;
 			this.paramStack.push(temp) ;
 			this.paramStack.push(temp2) ;
+		} else if("EMIT".equals(symbol)) {
+			System.out.print((char)(int)this.paramStack.pop());
 		} else if("R>".equals(symbol)) {
 			this.paramStack.push(this.returnStack.pop()) ;
 		} else if(">R".equals(symbol)) {
@@ -263,7 +280,7 @@ public class VirtualMachine {
 		String[] coreWordNames = {
 				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
 				">", "<", "=", "R>", ">R", ".", "SWAP","OVER","SEE","SIZE","PRINTWORD","*", "/",
-				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
+				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK","EMIT",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
 			dict.add(new Word(coreWordNames[x], Word.Type.CORE)) ;
