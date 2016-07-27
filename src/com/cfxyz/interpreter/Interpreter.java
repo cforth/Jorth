@@ -34,7 +34,6 @@ public class Interpreter {
 			System.out.println("OK\n");
 		} else {
 			this.vm.getParamStack().clear();
-			this.vm.getReturnStack().clear();
 			System.out.println("ERROR!\n");
 		}
 	}

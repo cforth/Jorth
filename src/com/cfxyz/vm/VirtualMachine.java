@@ -84,7 +84,6 @@ public class VirtualMachine {
 				System.out.println("OK\n");
 			} else {
 				this.getParamStack().clear();
-				this.getReturnStack().clear();
 				System.out.println("ERROR!\n");
 			}
 			this.ip = this.returnStack.pop();
@@ -108,6 +107,11 @@ public class VirtualMachine {
 		} else if("-".equals(symbol)) {
 			int temp = this.paramStack.pop() ;
 			this.paramStack.push(this.paramStack.pop() - temp) ;
+		} else if("*".equals(symbol)) {
+			this.paramStack.push(this.paramStack.pop() * this.paramStack.pop()) ;
+		} else if("/".equals(symbol)) {
+			int temp = this.paramStack.pop() ;
+			this.paramStack.push(this.paramStack.pop() / temp) ;
 		} else if(">".equals(symbol)) {
 			int temp = this.paramStack.pop() ;
 			if(this.paramStack.pop() > temp) {
@@ -233,7 +237,7 @@ public class VirtualMachine {
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
 				"END", "BYE", "DUP","READ","INTERPRET","VARIABLE","!","@","]", "+", "-", "DROP",
-				">", "<", "=", "R>", ">R", ".", "SWAP","OVER","SEE","SIZE","PRINTWORD",
+				">", "<", "=", "R>", ">R", ".", "SWAP","OVER","SEE","SIZE","PRINTWORD","*", "/",
 				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
