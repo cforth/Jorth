@@ -36,7 +36,9 @@ public final class VmUtil {
 		note.add(0);
 		int start = 0 ;
 		int end = 0;
-		if(line.indexOf(".\" ") != -1) {
+		if(line.trim().equals("")) {
+			source.add("END") ;
+		} else if(line.indexOf(".\" ") != -1) {
 			while(true) {
 				if(line.substring(end).indexOf(".\" ") != -1) {
 					start = line.substring(end).indexOf(".\" ") + end + 3;

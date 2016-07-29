@@ -1,6 +1,8 @@
 package com.cfxyz.vm;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,8 +107,6 @@ public class Jorth {
 		String nextSymbol = this.next.getName();
 		if (VmUtil.validateInteger(symbol)) {	//如果是数字就压入参数栈
 			this.paramStack.push(Integer.parseInt(symbol)) ; 
-		} else if("DUP".equals(symbol)) {
-			this.paramStack.push(this.paramStack.peek()) ;
 		} else if("BYE".equals(symbol)) {
 			System.exit(0);
 		}  else if("PARSE".equals(symbol)) {
@@ -168,17 +168,13 @@ public class Jorth {
 			}
 		} else if("DROP".equals(symbol)) {
 			this.paramStack.pop() ;
-		} else if("SWAP".equals(symbol)) {
+		} else if("PICK".equals(symbol)) {
 			int temp = this.paramStack.pop() ;
-			int temp2 = this.paramStack.pop() ;
-			this.paramStack.push(temp2) ;
-			this.paramStack.push(temp) ;
-		} else if("OVER".equals(symbol)) {
+			this.paramStack.push(this.paramStack.get(this.paramStack.size()-temp));
+		} else if("ROLL".equals(symbol)) {
 			int temp = this.paramStack.pop() ;
-			int temp2 = this.paramStack.pop() ;
-			this.paramStack.push(temp2) ;
-			this.paramStack.push(temp) ;
-			this.paramStack.push(temp2) ;
+			this.paramStack.push(this.paramStack.get(this.paramStack.size()-temp));
+			this.paramStack.remove(this.paramStack.size()-temp-1) ;
 		} else if("EMIT".equals(symbol)) {
 			System.out.print((char)(int)this.paramStack.pop());
 		} else if(".\"".equals(symbol)) {  //打印出后面字符串
@@ -255,6 +251,12 @@ public class Jorth {
 			this.dict.getLastWord().getWplist().add(word);
 			this.dict.getLastWord().getWplist().add(this.next); //如果是字符串常量，就编译进词典中
 			this.ip++ ;
+		} else if(";".equals(symbol)) {
+			this.dict.getLastWord().getWplist().add(this.dict.findByName("END"));
+			this.dict.get(this.dict.size() - 1).setWplist(this.dict.getLastWord().getWplist()); //为新的冒号词设置wplist
+			this.state = State.explain ;
+		} else if("[".equals(symbol)) {
+			this.state = State.explain ;
 		} else if(word != null) { //如果在词典中有定义
 			if(word.getType().toString().equals("IMMEDIATE")) {
 				this.explain(now) ;
@@ -265,12 +267,6 @@ public class Jorth {
 		} else {
 			if (VmUtil.validateInteger(symbol)) {	//如果是数字就编译成数字常数
 				this.dict.getLastWord().getWplist().add(new Word(symbol)) ;
-			} else if(";".equals(symbol)) {
-				this.dict.getLastWord().getWplist().add(this.dict.findByName("END"));
-				this.dict.get(this.dict.size() - 1).setWplist(this.dict.getLastWord().getWplist()); //为新的冒号词设置wplist
-				this.state = State.explain ;
-			} else if("[".equals(symbol)) {
-				this.state = State.explain ;
 			} else {
 				this.state = State.error ;
 			}
@@ -284,9 +280,9 @@ public class Jorth {
 	 */
 	private void loadCoreWords(Dict dict){
 		String[] coreWordNames = {
-				"END", "BYE", "DUP","PARSE","RUN","VARIABLE","!","@","]", "+", "-", "DROP",
-				">", "<", "=", "R>", ">R", ".", ".\"","SWAP","OVER","SEE","SIZE","PRINTWORD","*", "/",
-				".s", ":", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK","EMIT",
+				"END", "BYE","PICK","ROLL","PARSE","RUN","VARIABLE","!","@","[","]", "+", "-", "DROP",
+				">", "<", "=", "R>", ">R", ".", ".\"","SEE","SIZE","PRINTWORD","*", "/",
+				".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK","EMIT",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE"};
 		for(int x = 0; x < coreWordNames.length; x ++) {
 			dict.add(new Word(coreWordNames[x], Word.Type.CORE)) ;
@@ -308,6 +304,29 @@ public class Jorth {
 
 	public void setDict(Dict dict) {
 		this.dict = dict;
+	}
+	
+	public void loadLib(String filePath) {
+		
+		try {
+            String encoding="UTF-8";
+            File file=new File(filePath);
+            if(file.isFile() && file.exists()){ //判断文件是否存在
+                InputStreamReader read = new InputStreamReader(
+                new FileInputStream(file),encoding);//考虑到编码格式
+                BufferedReader bufferedReader = new BufferedReader(read);
+                String lineTxt = null;
+                while((lineTxt = bufferedReader.readLine()) != null){
+                	interpret(lineTxt);
+                }
+                read.close();
+		    }else{
+		        System.out.println("找不到指定的文件");
+		    }
+		} catch (Exception e) {
+		    System.out.println("读取文件内容出错");
+		    e.printStackTrace();
+		}
 	}
 	
 	public void printStack() {
