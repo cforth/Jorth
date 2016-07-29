@@ -48,8 +48,8 @@ public class Jorth {
 	 */
 	public void parse(String line) {
 		System.out.println("【执行语句】" + line);
-		
-		String [] source = line.trim().split("\\s+") ;
+
+		List<String> source = VmUtil.separateWord(line);
 		this.wordListBuffer = new ArrayList<Word>() ; //将解析后的代码存放在代码区中的，供IP指针操作
 		//文本解释器分离出一行源代码中的每个词，建立一个Word列表
 		boolean flag = true ; //flag为假时，忽略当前词，用于注释
@@ -68,6 +68,7 @@ public class Jorth {
 			}
 		}
 		this.wordListBuffer.add(this.dict.findByName("END")); 
+		//System.out.println(this.wordListBuffer);
 	}
 	
 	/**
@@ -109,8 +110,7 @@ public class Jorth {
 		} else if("BYE".equals(symbol)) {
 			System.exit(0);
 		}  else if("PARSE".equals(symbol)) {
-			// 测试从标准输入读取代码
-			try {
+			try {  // 从标准输入读取代码
 				this.source = this.localReader.readLine();
 				parse(this.source) ;
 			} catch (Exception e) {
@@ -181,7 +181,7 @@ public class Jorth {
 			this.paramStack.push(temp2) ;
 		} else if("EMIT".equals(symbol)) {
 			System.out.print((char)(int)this.paramStack.pop());
-		} else if(".\"".equals(symbol)) {  //打印出后面字符串，目前不支持字符串中有空格,并且不能再冒号定义中使用
+		} else if(".\"".equals(symbol)) {  //打印出后面字符串
 			System.out.print(nextSymbol.replace("\"", ""));
 			this.ip ++ ;
 		} else if("R>".equals(symbol)) {
@@ -251,7 +251,11 @@ public class Jorth {
 	public void compile(Word now) {
 		String symbol = now.getName();
 		Word word = this.dict.findByName(symbol) ;
-		if(word != null) {
+		if(".\"".equals(symbol)) {
+			this.dict.getLastWord().getWplist().add(word);
+			this.dict.getLastWord().getWplist().add(this.next); //如果是字符串常量，就编译进词典中
+			this.ip++ ;
+		} else if(word != null) { //如果在词典中有定义
 			if(word.getType().toString().equals("IMMEDIATE")) {
 				this.explain(now) ;
 				this.state = State.compile ;
