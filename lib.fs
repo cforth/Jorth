@@ -41,6 +41,7 @@
 : MAX2 ( N1 N2 N3 -- MAX1 MAX2 ) 2DUP MAX >R MIN MAX R> ;
 
 : 0= 0 = ;
+: <> 0= IF FALSE ELSE TRUE THEN ;
 : 0<> 0 <> ;
 : 0> 0 > ;
 : 0< 0 < ;
@@ -48,6 +49,13 @@
 
 : WORDS SIZE 0 DO R> R>  DUP PRINTWORD >R >R LOOP ;
 
-: INTERPRET ( -- ForthMainLoop) ." MAIN_LOOP START " CR BEGIN 62 EMIT PARSE RUN FALSE  UNTIL ;
+: INTERPRET ( -- ForthMainLoop)
+	." MAIN_LOOP START " CR
+	BEGIN
+		62 EMIT
+		PARSE
+		RUN
+		FALSE
+	UNTIL ;
 
 ( Forth System Words End ) WORDS
