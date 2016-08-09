@@ -40,14 +40,20 @@ public final class WordUtil {
 		} else {
 			System.out.println("无此核心词！");
 		}
-		space.ip++ ;
 	}
 	public static void colonWordHandle(int pfaAddr, Space space) {
 		//扩展词处理程序
 		space.returnStack.push(space.ip);
-		space.ip = pfaAddr ;
+		space.ip = pfaAddr-1 ;
 	}
-	public static void executeWord(int lfa, Space space) {
-		//执行词的步骤
+	public static void wordHandle(int cfaAddr, Space space) {
+		System.out.println();
+		System.out.println(space);
+		int cfa = space.memory[cfaAddr];
+		if(cfa == 1) {
+			coreWordHandle(cfaAddr+1, space);
+		} else if(cfa == 2) {
+			colonWordHandle(cfaAddr+1, space);
+		}
 	}
 }
