@@ -1,21 +1,24 @@
 package com.cfxyz.newvm.test;
 
-import com.cfxyz.newvm.DictSpace;
-import com.cfxyz.newvm.NewDict;
-import com.cfxyz.newvm.NewWord;
+import com.cfxyz.newvm.Space;
+import com.cfxyz.newvm.util.DictUtil;
 
 public class TestNewDict {
 
 	public static void main(String[] args) {
-		NewDict dict = new NewDict(new DictSpace(100));
-		dict.addWord(-1, "NORMAL", "REVEAL", "ADD", "CORE", new int[]{1,2,999});
-		dict.addWord(dict.dictSpace.last, "NORMAL", "REVEAL", "MUL", "CORE", new int[]{3,4,999});
-		dict.addWord(dict.dictSpace.last, "NORMAL", "REVEAL", "DIV", "CORE", new int[]{5,6,999});
-		dict.addWord(dict.dictSpace.last, "NORMAL", "REVEAL", "DUP", "CORE", new int[]{7,8,999});
-		dict.addWord2(new NewWord(dict.dictSpace.last, "NORMAL", "REVEAL", "DROP", "CORE", new int[]{9,10,11,999}));
+		Space space = new Space() ;
+
+		DictUtil.addWord(-1, "NORMAL", "REVEAL", "END", "CORE", new int[]{DictUtil.END}, space);
+		DictUtil.addWord(space.last, "NORMAL", "REVEAL", "ADD", "CORE", new int[]{DictUtil.ADD}, space);
+		DictUtil.addWord(space.last, "NORMAL", "REVEAL", "ADD2", "COLON", new int[]{DictUtil.ADD,DictUtil.ADD,DictUtil.END}, space);
 		
-		System.out.println(dict);
-		dict.listWord();
+		System.out.println(space);
+		DictUtil.listWord(space);
+		
+		space.paramStack.push(1);
+		space.paramStack.push(2);
+		space.memory[0] =  DictUtil.ADD;
+		//Ö´ÐÐ¾²Ì¬´úÂë
 	}
 
 }
