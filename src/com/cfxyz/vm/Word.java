@@ -52,6 +52,6 @@ public class Word {
 	}
 
 	public enum Type {
-		REVEAL, IMMEDIATE, HIDE, CORE, VAR
+		REVEAL, IMMEDIATE, HIDE, CORE, VAR, CONST
 	}
 }

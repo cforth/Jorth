@@ -121,6 +121,12 @@ public class Jorth {
 			this.returnStack.push(this.ip); // 设置返回地址
 			run(this.wordListBuffer);
 			this.ip = this.returnStack.pop();
+		} else if ("CONSTANT".equals(symbol)) {
+			this.dict.add(new Word(nextSymbol, Word.Type.CONST)); // 在词典中添加一个新的常量
+			List<Word> varBuffer = new ArrayList<Word>();
+			varBuffer.add(new Word(String.valueOf(this.paramStack.pop())));
+			this.dict.get(this.dict.size() - 1).setWplist(varBuffer);
+			this.ip++;
 		} else if ("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)); // 在词典中添加一个新的变量
 			List<Word> varBuffer = new ArrayList<Word>();
@@ -233,6 +239,9 @@ public class Jorth {
 			Word word = this.dict.findByName(symbol);
 			if (word.getType().equals(Word.Type.VAR)) {
 				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName())));
+			} else if (word.getType().equals(Word.Type.CONST)) {
+				this.paramStack
+						.push(Integer.valueOf(this.dict.findByName(word.getName()).getWplist().get(0).getName()));
 			} else if (word.getWplist() != null) {
 				this.returnStack.push(this.ip); // 设置返回地址
 				run(word.getWplist());// 递归调用run方法
@@ -284,9 +293,9 @@ public class Jorth {
 	 * @param dict
 	 */
 	private void loadCoreWords(Dict dict) {
-		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "VARIABLE", "!", "@", "[", "]", "+",
-				"-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE", "PRINTWORD", "*", "/", ".s", ":",
-				";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT", "?<MARK", "?>RESOLVE",
+		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "!", "@", "[",
+				"]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE", "PRINTWORD", "*", "/",
+				".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT", "?<MARK", "?>RESOLVE",
 				"?<RESOLVE" };
 		for (int x = 0; x < coreWordNames.length; x++) {
 			dict.add(new Word(coreWordNames[x], Word.Type.CORE));
