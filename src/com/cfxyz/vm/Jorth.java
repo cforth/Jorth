@@ -144,12 +144,14 @@ public class Jorth {
 			}
 			this.dict.get(this.dict.size() - 1).setWplist(arrayBuffer);
 		} else if ("@".equals(symbol)) {
-			int varIndex = this.paramStack.pop();
-			this.paramStack.push(Integer.parseInt(this.dict.get(varIndex).getWplist().get(0).getName()));
+			int varIndex = this.paramStack.pop(); //取出词在词典中的位置
+			int varDev = this.paramStack.pop(); //取出数组或变量的初始偏移量，变量为0
+			this.paramStack.push(Integer.parseInt(this.dict.get(varIndex).getWplist().get(varDev).getName()));
 		} else if ("!".equals(symbol)) {
 			int varIndex = this.paramStack.pop();
+			int varDev = this.paramStack.pop();
 			int varValue = this.paramStack.pop();
-			this.dict.get(varIndex).getWplist().get(0).setName(String.valueOf(varValue));
+			this.dict.get(varIndex).getWplist().get(varDev).setName(String.valueOf(varValue));
 		} else if ("]".equals(symbol)) {
 			this.state = State.compile;
 		} else if ("+".equals(symbol)) {
@@ -247,7 +249,8 @@ public class Jorth {
 					.add(new Word(String.valueOf(addr - this.dict.getLastWord().getWplist().size())));
 		} else if (this.dict.containsName(symbol)) {
 			Word word = this.dict.findByName(symbol);
-			if (word.getType().equals(Word.Type.VAR)) {
+			if (word.getType().equals(Word.Type.VAR)
+					|| word.getType().equals(Word.Type.ARRAY)) {
 				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName())));
 			} else if (word.getType().equals(Word.Type.CONST)) {
 				this.paramStack
