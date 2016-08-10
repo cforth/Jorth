@@ -29,6 +29,7 @@ public class TestJorth {
 		vm.interpret("3 YYY"); // 真假标志为FALSE时无限循环
 		vm.interpret("VARIABLE ZZ 555 ZZ ! ZZ @"); // 测试变量，应在栈上留下555
 		vm.interpret(": average DUP >R 1 DO + LOOP R> / ;");
+		vm.interpret("CREATE weekrain 7 ALLOT"); // 测试数组
 		vm.interpret("WORDS");
 		vm.interpret("INTERPRET");
 	}

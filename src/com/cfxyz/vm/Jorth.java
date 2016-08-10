@@ -133,6 +133,16 @@ public class Jorth {
 			varBuffer.add(new Word("0"));
 			this.dict.get(this.dict.size() - 1).setWplist(varBuffer);
 			this.ip++;
+		} else if ("CREATE".equals(symbol)) { // 目前只能用于定义数组
+			this.dict.add(new Word(nextSymbol, Word.Type.ARRAY)); // 在词典中添加一个新的数组
+			this.ip++;
+		} else if ("ALLOT".equals(symbol)) { // 用来在数组中分配空间
+			int arraySize = this.paramStack.pop();
+			List<Word> arrayBuffer = new ArrayList<Word>();
+			for (int x = 0; x < arraySize; x++) {
+				arrayBuffer.add(new Word("0"));
+			}
+			this.dict.get(this.dict.size() - 1).setWplist(arrayBuffer);
 		} else if ("@".equals(symbol)) {
 			int varIndex = this.paramStack.pop();
 			this.paramStack.push(Integer.parseInt(this.dict.get(varIndex).getWplist().get(0).getName()));
@@ -293,10 +303,10 @@ public class Jorth {
 	 * @param dict
 	 */
 	private void loadCoreWords(Dict dict) {
-		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "!", "@", "[",
-				"]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE", "PRINTWORD", "*", "/",
-				".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT", "?<MARK", "?>RESOLVE",
-				"?<RESOLVE" };
+		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "CREATE",
+				"ALLOT", "!", "@", "[", "]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE",
+				"PRINTWORD", "*", "/", ".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT",
+				"?<MARK", "?>RESOLVE", "?<RESOLVE" };
 		for (int x = 0; x < coreWordNames.length; x++) {
 			dict.add(new Word(coreWordNames[x], Word.Type.CORE));
 		}
