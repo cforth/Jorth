@@ -3,7 +3,7 @@ package com.cfxyz.newvm;
 import java.util.Arrays;
 import java.util.Stack;
 
-public class Space {
+public class Vm {
 	public int here; //词典中空白位的开始地址
 	public int last; //词典中最新一个词的词头地址
 	public int ip; //IP指针，指向正在执行的词的地址
@@ -15,7 +15,7 @@ public class Space {
 	public Stack<Integer> returnStack; //返回栈
 	public Stack<Integer> paramStack; //算术栈
 
-	public Space() {
+	public Vm() {
 		this.soureP = 0 ; //静态代码指针初始化
 		this.here = sourceSize ; //词典指针初始化
 		this.last = this.here ; //词典空白位开始地址指向空白词典头部

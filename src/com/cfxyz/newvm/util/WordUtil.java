@@ -1,13 +1,13 @@
 package com.cfxyz.newvm.util;
 
-import com.cfxyz.newvm.Space;
+import com.cfxyz.newvm.Vm;
 
 public final class WordUtil {
-	public static void createLFA(int lfa, Space space) {
+	public static void createLFA(int lfa, Vm space) {
 		space.setValue(lfa);
 		space.here ++ ;
 	}
-	public static void createNFA(int precedenceBit, int smudgeBit, int nameLength, String name, Space space) {
+	public static void createNFA(int precedenceBit, int smudgeBit, int nameLength, String name, Vm space) {
 		space.setValue(precedenceBit);
 		space.here ++ ;
 		space.setValue(smudgeBit);
@@ -20,17 +20,17 @@ public final class WordUtil {
 			space.here ++ ;
 		}
 	}
-	public static void createCFA(int cfa, Space space) {
+	public static void createCFA(int cfa, Vm space) {
 		space.setValue(cfa);
 		space.here ++;
 	}
-	public static void createPFA(int[] pfa, Space space) {
+	public static void createPFA(int[] pfa, Vm space) {
 		for(int p : pfa) {
 			space.setValue(p);
 			space.here ++ ;
 		}
 	}
-	public static void coreWordHandle(int pfaAddr, Space space) {
+	public static void coreWordHandle(int pfaAddr, Vm space) {
 		//核心词处理程序，模拟直接运行机器码
 		int symbol = space.memory[pfaAddr] ;
 		if(symbol == DictUtil.END) { // END的词头地址
@@ -41,12 +41,12 @@ public final class WordUtil {
 			System.out.println("无此核心词！");
 		}
 	}
-	public static void colonWordHandle(int pfaAddr, Space space) {
+	public static void colonWordHandle(int pfaAddr, Vm space) {
 		//扩展词处理程序
 		space.returnStack.push(space.ip);
 		space.ip = pfaAddr-1 ;
 	}
-	public static void wordHandle(int cfaAddr, Space space) {
+	public static void wordHandle(int cfaAddr, Vm space) {
 		System.out.println();
 		System.out.println(space);
 		int cfa = space.memory[cfaAddr];

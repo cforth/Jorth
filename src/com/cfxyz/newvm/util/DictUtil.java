@@ -1,12 +1,12 @@
 package com.cfxyz.newvm.util;
 
-import com.cfxyz.newvm.Space;
+import com.cfxyz.newvm.Vm;
 
 public final class DictUtil {
 	public final static int END = 1000 ;
 	public final static int ADD = 1009 ;
 	
-	public static void addWord(int lfa, String precedence, String smudge, String name, String code, int[] pfa, Space space) {
+	public static void addWord(int lfa, String precedence, String smudge, String name, String code, int[] pfa, Vm space) {
 		space.last = space.here ;  //更新词头地址
 		
 		WordUtil.createLFA(lfa, space);
@@ -40,7 +40,7 @@ public final class DictUtil {
 		WordUtil.createPFA(pfa, space);
 	}
 	
-	public static void listWord(Space space) {
+	public static void listWord(Vm space) {
 		int x = space.last;
 		while(x >= 0) {
 			int next = space.memory[x] ;
