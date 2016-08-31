@@ -16,7 +16,7 @@
 : OVER 2 PICK ;
 : ROT 3 ROLL ;
 : -ROT 3 ROLL 3 ROLL ;
-: 2DUP (n1 n2 -- n1 n2 n1 n2) OVER OVER ;
+: 2DUP ( n1 n2 -- n1 n2 n1 n2 ) OVER OVER ;
 : 2DROP DROP DROP ;
 : 2SWAP 4 ROLL 4 ROLL ;
 : 2OVER 4 PICK 4 PICK ;

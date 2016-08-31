@@ -1,6 +1,8 @@
 package com.cfxyz.vm;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,19 +55,12 @@ public class Jorth {
 		List<String> source = VmUtil.separateWord(line);
 		this.wordListBuffer = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作
 		// 文本解释器分离出一行源代码中的每个词，建立一个Word列表
-		boolean flag = true; // flag为假时，忽略当前词，用于注释
 		for (String s : source) {
-			if (flag) {
-				Word w = this.dict.findByName(s);
-				if (w != null) {
-					this.wordListBuffer.add(w);
-				} else if ('(' == s.charAt(0)) {
-					flag = false; // '('与')'之间内容为注释
-				} else { // 如果词典中没有该词，则新建一个临时词来存放
-					this.wordListBuffer.add(new Word(s));
-				}
-			} else if (')' == s.charAt(s.length() - 1)) {
-				flag = true;
+			Word w = this.dict.findByName(s);
+			if (w != null) {
+				this.wordListBuffer.add(w);
+			} else { // 如果词典中没有该词，则新建一个临时词来存放
+				this.wordListBuffer.add(new Word(s));
 			}
 		}
 		this.wordListBuffer.add(this.dict.findByName("END"));
@@ -91,7 +86,7 @@ public class Jorth {
 
 			if (State.error.equals(this.state)) {
 				this.paramStack.clear();
-				System.out.println("ERROR!\n");
+				System.out.println("ERROR! -> " + this.source);
 				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
 			}
 			this.ip++;
@@ -144,8 +139,8 @@ public class Jorth {
 			}
 			this.dict.get(this.dict.size() - 1).setWplist(arrayBuffer);
 		} else if ("@".equals(symbol)) {
-			int varIndex = this.paramStack.pop(); //取出词在词典中的位置
-			int varDev = this.paramStack.pop(); //取出数组或变量的初始偏移量，变量为0
+			int varIndex = this.paramStack.pop(); // 取出词在词典中的位置
+			int varDev = this.paramStack.pop(); // 取出数组或变量的初始偏移量，变量为0
 			this.paramStack.push(Integer.parseInt(this.dict.get(varIndex).getWplist().get(varDev).getName()));
 		} else if ("!".equals(symbol)) {
 			int varIndex = this.paramStack.pop();
@@ -249,8 +244,7 @@ public class Jorth {
 					.add(new Word(String.valueOf(addr - this.dict.getLastWord().getWplist().size())));
 		} else if (this.dict.containsName(symbol)) {
 			Word word = this.dict.findByName(symbol);
-			if (word.getType().equals(Word.Type.VAR)
-					|| word.getType().equals(Word.Type.ARRAY)) {
+			if (word.getType().equals(Word.Type.VAR) || word.getType().equals(Word.Type.ARRAY)) {
 				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName())));
 			} else if (word.getType().equals(Word.Type.CONST)) {
 				this.paramStack
@@ -314,6 +308,48 @@ public class Jorth {
 			dict.add(new Word(coreWordNames[x], Word.Type.CORE));
 		}
 
+	}
+	
+	/**
+	 * 从文件中读取Forth源代码，支持冒号词的换行定义
+	 * @param filePath 源代码文件的路径
+	 */
+	public void loadLib(String filePath) {
+		try {
+			String encoding = "UTF-8";
+			File file = new File(filePath);
+			if (file.isFile() && file.exists()) { // 判断文件是否存在
+				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
+				BufferedReader bufferedReader = new BufferedReader(read);
+				String lineTxt = null;
+				boolean colonFlag = false; // 处理冒号词换行定义
+				String colonTxt = null;
+				while ((lineTxt = bufferedReader.readLine()) != null) {
+					//从文件中读取源代码时，定义冒号词允许换行定义
+					if (!lineTxt.contains(":") && !lineTxt.contains(";") && !colonFlag
+							|| lineTxt.contains(":") && lineTxt.contains(";")) {
+						this.interpret(lineTxt);
+					} else if (lineTxt.contains(":")) {
+						colonFlag = true;
+						colonTxt = lineTxt;
+					} else if (lineTxt.contains(";")) {
+						colonTxt = colonTxt + " " + lineTxt;
+						this.interpret(colonTxt);
+						colonFlag = false;
+					} else if (colonFlag) {
+						colonTxt = colonTxt + " " + lineTxt;
+
+					}
+				}
+
+				read.close();
+			} else {
+				System.out.println("找不到指定的文件");
+			}
+		} catch (Exception e) {
+			System.out.println("读取文件内容出错");
+			e.printStackTrace();
+		}
 	}
 
 	public Stack<Integer> getParamStack() {

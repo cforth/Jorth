@@ -1,16 +1,15 @@
 package com.cfxyz.test;
 
 import com.cfxyz.vm.Jorth;
-import com.cfxyz.vm.util.VmUtil;
 
 public class TestJorth {
 
 	public static void main(String[] args) throws Exception {
 		// 初始化Forth虚拟机
 		Jorth vm = new Jorth();
-		// 从磁盘加载标准库文件中的冒号词，这是完成Forth文本解释器的必要步骤
-		String lib = VmUtil.loadLib("src/lib.fs");
-		vm.interpret(lib);
+		// 从文件中加载标准库，这是完成Forth文本解释器的必要步骤
+		vm.loadLib("src/lib.fs");
+
 
 		// 将源代码解析后交给虚拟机执行
 		vm.interpret("1 1 +");
