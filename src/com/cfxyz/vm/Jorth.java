@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import com.cfxyz.vm.util.VmUtil;
-
 public class Jorth {
 	private Stack<Integer> paramStack; // 参数栈
 	private Stack<Integer> returnStack; // 返回栈
@@ -43,7 +41,64 @@ public class Jorth {
 		run(this.wordListBuffer);
 
 	}
+	
+	/**
+	 * 将一行源代码字符串进行词法分析
+	 * 
+	 * @param line
+	 * @return 返回Forth词列表
+	 */
+	public List<String> getTokens(String line) {
+		line = line.replaceAll("\\(\\s[^)]*\\)", " "); //将源代码中的括号注释删除
+		List<String> tokens = new ArrayList<String>();
 
+		List<Integer> note = new ArrayList<Integer>();
+		note.add(0);
+		int start = 0;
+		int end = 0;
+		if (line.trim().equals("")) {
+			tokens.add("END");
+		} else if (line.indexOf(".\" ") != -1) {
+			while (true) {
+				if (line.substring(end).indexOf(".\" ") != -1) {
+					start = line.substring(end).indexOf(".\" ") + end + 3;
+					end = line.substring(start).indexOf("\"") + start + 1;
+					if (end != -1) {
+						note.add(start);
+						note.add(end);
+
+					} else {
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+			note.add(line.length());
+			for (String s : line.substring(note.get(0), note.get(1)).trim().split("\\s+")) {
+				tokens.add(s);
+			}
+			for (int x = 1; x < note.size() - 2; x += 2) {
+				int y = x + 1;
+				int z = x + 2;
+
+				tokens.add(line.substring(note.get(x), note.get(y)).trim());
+				for (String s : line.substring(note.get(y), note.get(z)).trim().split("\\s+")) {
+					if (!s.equals("")) {
+						tokens.add(s);
+					}
+				}
+			}
+
+		} else {
+			for (String x : line.trim().split("\\s+")) {
+				tokens.add(x);
+			}
+		}
+
+		return tokens;
+	}
+	
 	/**
 	 * 将一行Forth代码转换为Word列表
 	 * 
@@ -52,10 +107,10 @@ public class Jorth {
 	public void parse(String line) {
 		System.out.println("【执行语句】" + line);
 
-		List<String> source = VmUtil.separateWord(line);
+		List<String> tokens = getTokens(line);
 		this.wordListBuffer = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作
 		// 文本解释器分离出一行源代码中的每个词，建立一个Word列表
-		for (String s : source) {
+		for (String s : tokens) {
 			Word w = this.dict.findByName(s);
 			if (w != null) {
 				this.wordListBuffer.add(w);
@@ -101,7 +156,7 @@ public class Jorth {
 	public void explain(Word now) {
 		String symbol = now.getName();
 		String nextSymbol = this.next.getName();
-		if (VmUtil.validateInteger(symbol)) { // 如果是数字就压入参数栈
+		if (symbol.matches("-?\\d+")) { // 如果是数字就压入参数栈
 			this.paramStack.push(Integer.parseInt(symbol));
 		} else if ("BYE".equals(symbol)) {
 			System.exit(0);
@@ -285,7 +340,7 @@ public class Jorth {
 				this.dict.getLastWord().getWplist().add(word);
 			}
 		} else {
-			if (VmUtil.validateInteger(symbol)) { // 如果是数字就编译成数字常数
+			if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
 				this.dict.getLastWord().getWplist().add(new Word(symbol));
 			} else {
 				System.out.println(symbol);
