@@ -203,8 +203,8 @@ public class Jorth {
 			this.ip++;
 		} else if ("SIZE".equals(symbol)) { // 词典长度
 			this.paramStack.push(this.dict.size());
-		} else if ("PRINTWORD".equals(symbol)) { // 将栈顶数字作为词典中词的下标，打印出词的定义
-			System.out.println(this.dict.get(this.paramStack.pop()));
+		} else if ("PRINTWORD".equals(symbol)) { // 将栈顶数字作为词典中词的下标，打印出词的名称
+			System.out.print(this.dict.get(this.paramStack.pop()).getName());
 		} else if (".".equals(symbol)) {
 			System.out.println(this.paramStack.pop());
 		} else if (".s".equals(symbol)) {

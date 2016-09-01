@@ -48,7 +48,7 @@
 : 0< 0 < ;
 : ?DUP DUP 0<> IF DUP THEN ;
 
-: WORDS SIZE 0 DO R> R>  DUP PRINTWORD >R >R LOOP ;
+: WORDS SIZE 0 DO R> R>  DUP PRINTWORD ." , " >R >R LOOP CR ;
 
 : INTERPRET ( -- ForthMainLoop)
 	." MAIN_LOOP START " CR
