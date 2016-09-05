@@ -47,8 +47,15 @@ public class Word {
 
 	@Override
 	public String toString() {
-		String wp = this.wplist == null ? "" : " , Value = " + this.wplist;
-		return "[Name = " + this.name + wp + "]";
+		if(this.wplist == null) {
+			return this.name;
+		} else {
+			String str = "";
+			for(Word w : this.wplist) {
+				str += w.getName() + " ";
+			}
+			return str;
+		}
 	}
 
 	public enum Type {

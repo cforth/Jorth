@@ -122,7 +122,7 @@ public class Jorth {
 	 * @param line
 	 */
 	public void parse(String line) {
-		this.out.println("【执行语句】" + line);
+		//this.out.println("【执行语句】" + line);
 
 		List<String> tokens = getTokens(line);
 		this.wordListBuffer = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作

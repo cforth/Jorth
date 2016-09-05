@@ -48,10 +48,15 @@
 : 0< 0 < ;
 : ?DUP DUP 0<> IF DUP THEN ;
 
-: WORDS SIZE 0 DO R> R>  DUP PRINTWORD ." , " >R >R LOOP CR ;
+: WORDS
+	." (Dictionary Start)" CR
+	SIZE 0 
+	DO
+		R> R> DUP PRINTWORD ." , " >R >R
+	LOOP CR ." (Dictionary End)" CR ;
 
 : INTERPRET ( -- ForthMainLoop)
-	." MAIN_LOOP START " CR
+	." (MAIN_LOOP START)" CR
 	BEGIN
 		62 EMIT
 		PARSE
@@ -59,4 +64,7 @@
 		FALSE
 	UNTIL ;
 
-( Forth System Words End ) WORDS
+( Forth System Words End )
+." Jorth -- Forth system by Java, Realized by Chaif!" CR
+." This is all system words in dictionary, Enter 'SEE WordName' view word, enter 'BYE' exit! " CR
+WORDS
