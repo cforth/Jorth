@@ -11,10 +11,10 @@ public class TestJorth {
 
 	public static void main(String[] args) throws Exception {
 		// 初始化Forth虚拟机
-		InputStream input = new FileInputStream("F:/in.fs");
-		OutputStream output = new FileOutputStream("F:/out.fs");
-		Jorth vm = new Jorth(input, output);
-//		Jorth vm = new Jorth();
+//		InputStream input = new FileInputStream("F:/in.fs");
+//		OutputStream output = new FileOutputStream("F:/out.fs");
+//		Jorth vm = new Jorth(input, output);
+		Jorth vm = new Jorth();
 		// 从文件中加载标准库，这是完成Forth文本解释器的必要步骤
 		vm.loadLib("src/lib.fs");
 
