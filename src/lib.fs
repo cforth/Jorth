@@ -52,13 +52,13 @@
 	." (Dictionary Start)" CR
 	SIZE 0 
 	DO
-		R> R> DUP PRINTWORD ." , " >R >R
+		R> R> DUP PRINTWORD SPACE SPACE >R >R
 	LOOP CR ." (Dictionary End)" CR ;
 
 : INTERPRET ( -- ForthMainLoop)
 	." (MAIN_LOOP START)" CR
 	BEGIN
-		62 EMIT
+		." >"
 		PARSE
 		RUN
 		FALSE
