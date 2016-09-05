@@ -3,7 +3,10 @@ package com.cfxyz.vm;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -17,7 +20,8 @@ public class Jorth {
 	private Word next; // 向右边提前看一个词
 	private String source = null; // 指向当前读入的源代码字符串
 	private List<Word> wordListBuffer = null; // 将输入字符串转为Word列表后保存起来
-	private BufferedReader localReader = null;
+	private BufferedReader localReader = null; //指定输入流
+	private PrintStream out = null; //指定输出流
 
 	/**
 	 * Forth的虚拟机初始化
@@ -28,6 +32,19 @@ public class Jorth {
 		this.dict = new Dict();
 		loadCoreWords(this.dict);
 		this.localReader = new BufferedReader(new InputStreamReader(System.in));
+		this.out = new PrintStream(System.out);
+	}
+	
+	/**
+	 * Forth的虚拟机初始化，指定输出流
+	 */
+	public Jorth(InputStream input, OutputStream output) {
+		this.paramStack = new Stack<Integer>();
+		this.returnStack = new Stack<Integer>();
+		this.dict = new Dict();
+		loadCoreWords(this.dict);
+		this.localReader = new BufferedReader(new InputStreamReader(input));
+		this.out = new PrintStream(output);
 	}
 
 	/**
@@ -105,7 +122,7 @@ public class Jorth {
 	 * @param line
 	 */
 	public void parse(String line) {
-		System.out.println("【执行语句】" + line);
+		this.out.println("【执行语句】" + line);
 
 		List<String> tokens = getTokens(line);
 		this.wordListBuffer = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作
@@ -119,7 +136,7 @@ public class Jorth {
 			}
 		}
 		this.wordListBuffer.add(this.dict.findByName("END"));
-		// System.out.println(this.wordListBuffer);
+		// this.out.println(this.wordListBuffer);
 	}
 
 	/**
@@ -141,7 +158,7 @@ public class Jorth {
 
 			if (State.error.equals(this.state)) {
 				this.paramStack.clear();
-				System.out.println("ERROR! -> " + this.source);
+				this.out.println("ERROR! -> " + this.source);
 				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
 			}
 			this.ip++;
@@ -163,7 +180,12 @@ public class Jorth {
 		} else if ("PARSE".equals(symbol)) {
 			try { // 从标准输入读取代码
 				this.source = this.localReader.readLine();
-				parse(this.source);
+				if(this.source == null) {
+					this.out.println("【程序退出】");
+					System.exit(-1);  //如果到达输入流尾端，则退出主循环
+				} else {
+					parse(this.source);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -245,26 +267,26 @@ public class Jorth {
 			this.paramStack.push(this.paramStack.get(this.paramStack.size() - temp));
 			this.paramStack.remove(this.paramStack.size() - temp - 1);
 		} else if ("EMIT".equals(symbol)) {
-			System.out.print((char) (int) this.paramStack.pop());
+			this.out.print((char) (int) this.paramStack.pop());
 		} else if (".\"".equals(symbol)) { // 打印出后面字符串
-			System.out.print(nextSymbol.replace("\"", ""));
+			this.out.print(nextSymbol.replace("\"", ""));
 			this.ip++;
 		} else if ("R>".equals(symbol)) {
 			this.paramStack.push(this.returnStack.pop());
 		} else if (">R".equals(symbol)) {
 			this.returnStack.push(this.paramStack.pop());
 		} else if ("SEE".equals(symbol)) {
-			System.out.println(this.dict.findByName(nextSymbol));
+			this.out.println(this.dict.findByName(nextSymbol));
 			this.ip++;
 		} else if ("SIZE".equals(symbol)) { // 词典长度
 			this.paramStack.push(this.dict.size());
 		} else if ("PRINTWORD".equals(symbol)) { // 将栈顶数字作为词典中词的下标，打印出词的名称
-			System.out.print(this.dict.get(this.paramStack.pop()).getName());
+			this.out.print(this.dict.get(this.paramStack.pop()).getName());
 		} else if (".".equals(symbol)) {
-			System.out.println(this.paramStack.pop());
+			this.out.println(this.paramStack.pop());
 		} else if (".s".equals(symbol)) {
-			System.out.println("DS> " + this.paramStack.toString());
-			System.out.println("RS> " + this.returnStack.toString());
+			this.out.println("DS> " + this.paramStack.toString());
+			this.out.println("RS> " + this.returnStack.toString());
 		} else if (":".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, new ArrayList<Word>())); // 在词典中添加一个新的冒号词
 			this.ip++;
@@ -343,7 +365,7 @@ public class Jorth {
 			if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
 				this.dict.getLastWord().getWplist().add(new Word(symbol));
 			} else {
-				System.out.println(symbol);
+				this.out.println(symbol);
 				this.state = State.error;
 			}
 		}
@@ -399,10 +421,10 @@ public class Jorth {
 
 				read.close();
 			} else {
-				System.out.println("找不到指定的文件");
+				this.out.println("找不到指定的文件");
 			}
 		} catch (Exception e) {
-			System.out.println("读取文件内容出错");
+			this.out.println("读取文件内容出错");
 			e.printStackTrace();
 		}
 	}
@@ -424,7 +446,7 @@ public class Jorth {
 	}
 
 	public void printStack() {
-		System.out.println("【参数栈】" + this.getParamStack().toString());
-		System.out.println("【返回栈】" + this.getReturnStack().toString());
+		this.out.println("【参数栈】" + this.getParamStack().toString());
+		this.out.println("【返回栈】" + this.getReturnStack().toString());
 	}
 }
