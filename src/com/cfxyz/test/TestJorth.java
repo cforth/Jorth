@@ -16,8 +16,8 @@ public class TestJorth {
 //		Jorth vm = new Jorth(input, output);
 		Jorth vm = new Jorth();
 		// 从文件中加载标准库，这是完成Forth文本解释器的必要步骤
-		vm.loadLib("src/lib.fs");
-		vm.loadLib("src/test.fs");
+		vm.loadLib("lib.fs");
+		vm.loadLib("test.fs");
 		vm.interpret("INTERPRET"); //在lib.fs里面用Forth词定义了主循环，所以可以直接进入主循环了
 	}
 }
