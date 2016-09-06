@@ -4,21 +4,27 @@ import java.util.List;
 
 public class Word {
 	private String name;
-	private Type type = Word.Type.REVEAL;
+	private Type type;
 	private List<Word> wplist;
-
+	
+	/**
+	 * 创建一个Forth词，词的类型默认为Type.REVEAL
+	 * @param name 词的名字
+	 */
 	public Word(String name) {
 		this.name = name;
+		this.type = Type.REVEAL;
 	}
-
-	public Word(String name, List<Word> wplist) {
-		this.name = name;
-		this.wplist = wplist;
-	}
-
+	
 	public Word(String name, Type type) {
 		this.name = name;
 		this.type = type;
+	}
+
+	public Word(String name, Type type, List<Word> wplist) {
+		this.name = name;
+		this.type = type;
+		this.wplist = wplist;
 	}
 
 	public String getName() {

@@ -66,7 +66,7 @@ public class Jorth {
 	 * @return 返回Forth词列表
 	 */
 	public List<String> getTokens(String line) {
-		line = line.replaceAll("\\(\\s[^)]*\\)", " "); //将源代码中的括号注释删除
+		line = line.replaceAll("\\(\\s[^)]*\\)", ""); //将源代码中的括号注释删除
 		List<String> tokens = new ArrayList<String>();
 
 		List<Integer> note = new ArrayList<Integer>();
@@ -288,7 +288,7 @@ public class Jorth {
 			this.out.println("DS> " + this.paramStack.toString());
 			this.out.println("RS> " + this.returnStack.toString());
 		} else if (":".equals(symbol)) {
-			this.dict.add(new Word(nextSymbol, new ArrayList<Word>())); // 在词典中添加一个新的冒号词
+			this.dict.add(new Word(nextSymbol, Word.Type.REVEAL, new ArrayList<Word>())); // 在词典中添加一个新的冒号词
 			this.ip++;
 			this.state = State.compile;
 		} else if ("?BRANCH".equals(symbol)) {
@@ -350,7 +350,6 @@ public class Jorth {
 			this.ip++;
 		} else if (";".equals(symbol)) {
 			this.dict.getLastWord().getWplist().add(this.dict.findByName("END"));
-			this.dict.get(this.dict.size() - 1).setWplist(this.dict.getLastWord().getWplist()); // 为新的冒号词设置wplist
 			this.state = State.explain;
 		} else if ("[".equals(symbol)) {
 			this.state = State.explain;
@@ -427,6 +426,13 @@ public class Jorth {
 			this.out.println("读取文件内容出错");
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * 虚拟机的状态
+	 */
+	private enum State {
+		explain, compile, error
 	}
 
 	public Stack<Integer> getParamStack() {
