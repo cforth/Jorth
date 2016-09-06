@@ -322,7 +322,7 @@ public class Jorth {
 		} else if (this.dict.containsName(symbol)) {
 			Word word = this.dict.findByName(symbol);
 			if (word.getType().equals(Word.Type.VAR) || word.getType().equals(Word.Type.ARRAY)) {
-				this.paramStack.push(this.dict.lastIndexOf(this.dict.findByName(word.getName())));
+				this.paramStack.push(this.dict.lastIndexOf(word));
 			} else if (word.getType().equals(Word.Type.CONST)) {
 				this.paramStack
 						.push(Integer.valueOf(this.dict.findByName(word.getName()).getWplist().get(0).getName()));
