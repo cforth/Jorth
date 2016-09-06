@@ -338,14 +338,14 @@ public class Jorth {
 
 	/**
 	 * 编译当前Word词
-	 * 
 	 * @param now
 	 */
 	public void compile(Word now) {
 		String symbol = now.getName();
-		Word word = this.dict.findByName(symbol);
-		if (".\"".equals(symbol)) {
-			this.dict.getLastWord().getWplist().add(word);
+		if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
+			this.dict.getLastWord().getWplist().add(new Word(symbol));
+		} else if (".\"".equals(symbol)) {
+			this.dict.getLastWord().getWplist().add(new Word(symbol));
 			this.dict.getLastWord().getWplist().add(this.next); // 如果是字符串常量，就编译进词典中
 			this.ip++;
 		} else if (";".equals(symbol)) {
@@ -353,20 +353,16 @@ public class Jorth {
 			this.state = State.explain;
 		} else if ("[".equals(symbol)) {
 			this.state = State.explain;
-		} else if (word != null) { // 如果在词典中有定义
+		} else if (this.dict.containsName(symbol)) { // 如果在词典中有定义
+			Word word = this.dict.findByName(symbol);
 			if (word.getType().toString().equals("IMMEDIATE")) {
-				this.explain(now);
+				this.explain(word);
 				this.state = State.compile;
 			} else {
 				this.dict.getLastWord().getWplist().add(word);
 			}
 		} else {
-			if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
-				this.dict.getLastWord().getWplist().add(new Word(symbol));
-			} else {
-				this.out.println(symbol);
-				this.state = State.error;
-			}
+			this.state = State.error;
 		}
 	}
 
