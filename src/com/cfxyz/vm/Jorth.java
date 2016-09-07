@@ -3,6 +3,7 @@ package com.cfxyz.vm;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -159,6 +160,7 @@ public class Jorth {
 				this.paramStack.clear();
 				this.out.println("ERROR! -> " + this.source);
 				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
+				break; //退出当前执行的Word列表
 			}
 			this.ip++;
 		}
@@ -179,7 +181,8 @@ public class Jorth {
 			System.exit(0);
 		} else if ("PARSE".equals(symbol)) {
 			try { // 从标准输入读取代码
-				this.source = this.localReader.readLine();
+				//this.source = this.localReader.readLine();
+				this.source = readLine();
 				if(this.source == null) {
 					this.out.println("【程序退出】");
 					System.exit(-1);  //如果到达输入流尾端，则退出主循环
@@ -365,6 +368,37 @@ public class Jorth {
 			this.state = State.error;
 		}
 	}
+	
+	/**
+	 * 从输入流中读取Forth代码，冒号词可以跨行定义
+	 * @return 一行可以合法的Forth代码
+	 */
+	private String readLine() {
+		String lineTxt = null;
+		boolean colonFlag = false; // 处理冒号词换行定义
+		String colonTxt = "";
+		try {
+			while ((lineTxt = this.localReader.readLine()) != null) {
+				//冒号词允许换行定义
+				if (!lineTxt.contains(":") && !lineTxt.contains(";") && !colonFlag
+						|| lineTxt.contains(":") && lineTxt.contains(";")) {
+					return lineTxt;
+				} else if (lineTxt.contains(":")) {
+					colonFlag = true;
+					colonTxt = lineTxt;
+				} else if (lineTxt.contains(";")) {
+					colonTxt = colonTxt + " " + lineTxt;
+					return colonTxt;
+				} else if (colonFlag) {
+					colonTxt = colonTxt + " " + lineTxt;
+
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return lineTxt;
+	}
 
 	/**
 	 * 加载核心词到词典中 仅仅在词典中添加核心词的空词，核心词是通过explain方法模拟执行
@@ -390,29 +424,14 @@ public class Jorth {
 			File file = new File(filePath);
 			if (file.isFile() && file.exists()) { // 判断文件是否存在
 				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
-				BufferedReader bufferedReader = new BufferedReader(read);
-				String lineTxt = null;
-				boolean colonFlag = false; // 处理冒号词换行定义
-				String colonTxt = null;
-				while ((lineTxt = bufferedReader.readLine()) != null) {
-					//从文件中读取源代码时，定义冒号词允许换行定义
-					if (!lineTxt.contains(":") && !lineTxt.contains(";") && !colonFlag
-							|| lineTxt.contains(":") && lineTxt.contains(";")) {
-						this.interpret(lineTxt);
-					} else if (lineTxt.contains(":")) {
-						colonFlag = true;
-						colonTxt = lineTxt;
-					} else if (lineTxt.contains(";")) {
-						colonTxt = colonTxt + " " + lineTxt;
-						this.interpret(colonTxt);
-						colonFlag = false;
-					} else if (colonFlag) {
-						colonTxt = colonTxt + " " + lineTxt;
-
-					}
+				BufferedReader vmReader = this.localReader; //先保存虚拟机的localReader
+				this.localReader = new BufferedReader(read);
+				while((this.source = readLine()) != null) {
+					this.interpret(this.source);
 				}
-
+				
 				read.close();
+				this.localReader = vmReader; //恢复虚拟机的localReader
 			} else {
 				this.out.println("找不到指定的文件");
 			}
