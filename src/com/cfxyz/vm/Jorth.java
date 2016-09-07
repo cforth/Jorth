@@ -179,18 +179,17 @@ public class Jorth {
 			this.paramStack.push(Integer.parseInt(symbol));
 		} else if ("BYE".equals(symbol)) {
 			System.exit(0);
-		} else if ("PARSE".equals(symbol)) {
-			try { // 从标准输入读取代码
-				//this.source = this.localReader.readLine();
-				this.source = readLine();
-				if(this.source == null) {
-					this.out.println("【程序退出】");
-					System.exit(-1);  //如果到达输入流尾端，则退出主循环
-				} else {
-					parse(this.source);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+		} else if ("LOAD".equals(symbol)) {
+			loadLib(nextSymbol); //从文件中加载Forth代码
+			this.ip++;
+		} else if ("READ".equals(symbol)) {
+			this.source = read(); //从输入流中读取一段Forth代码
+		} else if ("PARSE".equals(symbol)) {		
+			if(this.source == null) {
+				this.out.println("【程序退出】");
+				System.exit(-1);  //如果到达输入流尾端，则退出主循环
+			} else {
+				parse(this.source);
 			}
 		} else if ("RUN".equals(symbol)) {
 			this.returnStack.push(this.ip); // 设置返回地址
@@ -373,7 +372,7 @@ public class Jorth {
 	 * 从输入流中读取Forth代码，冒号词可以跨行定义
 	 * @return 一行可以合法的Forth代码
 	 */
-	private String readLine() {
+	private String read() {
 		String lineTxt = null;
 		boolean colonFlag = false; // 处理冒号词换行定义
 		String colonTxt = "";
@@ -407,7 +406,7 @@ public class Jorth {
 		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "CREATE",
 				"ALLOT", "!", "@", "[", "]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE",
 				"PRINTWORD", "*", "/", ".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT",
-				"?<MARK", "?>RESOLVE", "?<RESOLVE" };
+				"?<MARK", "?>RESOLVE", "?<RESOLVE", "READ", "LOAD" };
 		for (int x = 0; x < coreWordNames.length; x++) {
 			this.dict.add(new Word(coreWordNames[x], Word.Type.CORE));
 		}
@@ -426,7 +425,7 @@ public class Jorth {
 				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
 				BufferedReader vmReader = this.localReader; //先保存虚拟机的localReader
 				this.localReader = new BufferedReader(read);
-				while((this.source = readLine()) != null) {
+				while((this.source = read()) != null) {
 					this.interpret(this.source);
 				}
 				

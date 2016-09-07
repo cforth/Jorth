@@ -59,6 +59,7 @@
 	." (MAIN_LOOP START)" CR
 	BEGIN
 		." >"
+		READ
 		PARSE
 		RUN
 		FALSE
