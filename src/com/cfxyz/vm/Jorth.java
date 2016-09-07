@@ -304,7 +304,7 @@ public class Jorth {
 		} else if ("IMMEDIATE".equals(symbol)) {
 			this.dict.getLastWord().setType(Word.Type.IMMEDIATE);
 		} else if ("COMPILE".equals(symbol)) {
-			lastWordWplist.add(new Word(nextSymbol));
+			compile(this.next);
 			this.ip++;
 		} else if ("?>MARK".equals(symbol)) {
 			this.paramStack.push(lastWordWplist.size());
@@ -358,7 +358,7 @@ public class Jorth {
 		} else if (this.dict.containsName(symbol)) { // 如果在词典中有定义
 			Word word = this.dict.findByName(symbol);
 			if (word.getType().toString().equals("IMMEDIATE")) {
-				this.explain(word);
+				explain(word);
 				this.state = State.compile;
 			} else {
 				lastWordWplist.add(word);
