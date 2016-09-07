@@ -5,19 +5,17 @@ import java.util.List;
 
 public class Dict {
 	private List<Word> dict;
-	private int size;
 	
 	public Dict() {
 		this.dict = new ArrayList<Word>();
 	}
 	
 	public boolean add(Word word) {
-		this.size ++;
 		return this.dict.add(word);
 	}
 	
 	public int size() {
-		return this.size;
+		return this.dict.size();
 	}
 	
 	public Word get(int index) {

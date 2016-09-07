@@ -30,7 +30,7 @@ public class Jorth {
 		this.paramStack = new Stack<Integer>();
 		this.returnStack = new Stack<Integer>();
 		this.dict = new Dict();
-		loadCoreWords(this.dict);
+		loadCoreWords();
 		this.localReader = new BufferedReader(new InputStreamReader(System.in));
 		this.out = new PrintStream(System.out);
 	}
@@ -42,7 +42,7 @@ public class Jorth {
 		this.paramStack = new Stack<Integer>();
 		this.returnStack = new Stack<Integer>();
 		this.dict = new Dict();
-		loadCoreWords(this.dict);
+		loadCoreWords();
 		this.localReader = new BufferedReader(new InputStreamReader(input));
 		this.out = new PrintStream(output);
 	}
@@ -136,7 +136,6 @@ public class Jorth {
 			}
 		}
 		this.wordListBuffer.add(this.dict.findByName("END"));
-		// this.out.println(this.wordListBuffer);
 	}
 
 	/**
@@ -173,6 +172,7 @@ public class Jorth {
 	public void explain(Word now) {
 		String symbol = now.getName();
 		String nextSymbol = this.next.getName();
+		List<Word> lastWordWplist = this.dict.getLastWord().getWplist();
 		if (symbol.matches("-?\\d+")) { // 如果是数字就压入参数栈
 			this.paramStack.push(Integer.parseInt(symbol));
 		} else if ("BYE".equals(symbol)) {
@@ -197,13 +197,13 @@ public class Jorth {
 			this.dict.add(new Word(nextSymbol, Word.Type.CONST)); // 在词典中添加一个新的常量
 			List<Word> varBuffer = new ArrayList<Word>();
 			varBuffer.add(new Word(String.valueOf(this.paramStack.pop())));
-			this.dict.get(this.dict.size() - 1).setWplist(varBuffer);
+			this.dict.getLastWord().setWplist(varBuffer);
 			this.ip++;
 		} else if ("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)); // 在词典中添加一个新的变量
 			List<Word> varBuffer = new ArrayList<Word>();
 			varBuffer.add(new Word("0"));
-			this.dict.get(this.dict.size() - 1).setWplist(varBuffer);
+			this.dict.getLastWord().setWplist(varBuffer);
 			this.ip++;
 		} else if ("CREATE".equals(symbol)) { // 目前只能用于定义数组
 			this.dict.add(new Word(nextSymbol, Word.Type.ARRAY)); // 在词典中添加一个新的数组
@@ -214,7 +214,7 @@ public class Jorth {
 			for (int x = 0; x < arraySize; x++) {
 				arrayBuffer.add(new Word("0"));
 			}
-			this.dict.get(this.dict.size() - 1).setWplist(arrayBuffer);
+			this.dict.getLastWord().setWplist(arrayBuffer);
 		} else if ("@".equals(symbol)) {
 			int varIndex = this.paramStack.pop(); // 取出词在词典中的位置
 			int varDev = this.paramStack.pop(); // 取出数组或变量的初始偏移量，变量为0
@@ -300,25 +300,24 @@ public class Jorth {
 		} else if ("BRANCH".equals(symbol)) {
 			this.ip += Integer.parseInt(nextSymbol);
 		} else if ("IMMEDIATE".equals(symbol)) {
-			this.dict.get(this.dict.size() - 1).setType(Word.Type.IMMEDIATE);
+			this.dict.getLastWord().setType(Word.Type.IMMEDIATE);
 		} else if ("COMPILE".equals(symbol)) {
-			this.dict.getLastWord().getWplist().add(new Word(nextSymbol));
+			lastWordWplist.add(new Word(nextSymbol));
 			this.ip++;
 		} else if ("?>MARK".equals(symbol)) {
-			this.paramStack.push(this.dict.getLastWord().getWplist().size());
+			this.paramStack.push(lastWordWplist.size());
 			this.paramStack.push(0); // 在参数栈留下标记
-			this.dict.getLastWord().getWplist().add(new Word("0"));
+			lastWordWplist.add(new Word("0"));
 		} else if ("?<MARK".equals(symbol)) {
-			this.paramStack.push(this.dict.getLastWord().getWplist().size());
+			this.paramStack.push(lastWordWplist.size());
 		} else if ("?>RESOLVE".equals(symbol)) {
 			int flag = this.paramStack.pop();
 			int addr = this.paramStack.pop();
-			this.dict.getLastWord().getWplist().set(addr,
-					new Word(String.valueOf(this.dict.getLastWord().getWplist().size() - addr + flag)));
+			lastWordWplist.set(addr,
+					new Word(String.valueOf(lastWordWplist.size() - addr + flag)));
 		} else if ("?<RESOLVE".equals(symbol)) {
 			int addr = this.paramStack.pop();
-			this.dict.getLastWord().getWplist()
-					.add(new Word(String.valueOf(addr - this.dict.getLastWord().getWplist().size())));
+			lastWordWplist.add(new Word(String.valueOf(addr - lastWordWplist.size())));
 		} else if (this.dict.containsName(symbol)) {
 			Word word = this.dict.findByName(symbol);
 			if (word.getType().equals(Word.Type.VAR) || word.getType().equals(Word.Type.ARRAY)) {
@@ -342,14 +341,15 @@ public class Jorth {
 	 */
 	public void compile(Word now) {
 		String symbol = now.getName();
+		List<Word> lastWordWplist = this.dict.getLastWord().getWplist();
 		if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
-			this.dict.getLastWord().getWplist().add(new Word(symbol));
+			lastWordWplist.add(new Word(symbol));
 		} else if (".\"".equals(symbol)) {
-			this.dict.getLastWord().getWplist().add(new Word(symbol));
-			this.dict.getLastWord().getWplist().add(this.next); // 如果是字符串常量，就编译进词典中
+			lastWordWplist.add(this.dict.findByName(".\""));
+			lastWordWplist.add(this.next); // 如果是字符串常量，就编译进词典中
 			this.ip++;
 		} else if (";".equals(symbol)) {
-			this.dict.getLastWord().getWplist().add(this.dict.findByName("END"));
+			lastWordWplist.add(this.dict.findByName("END"));
 			this.state = State.explain;
 		} else if ("[".equals(symbol)) {
 			this.state = State.explain;
@@ -359,7 +359,7 @@ public class Jorth {
 				this.explain(word);
 				this.state = State.compile;
 			} else {
-				this.dict.getLastWord().getWplist().add(word);
+				lastWordWplist.add(word);
 			}
 		} else {
 			this.state = State.error;
@@ -368,16 +368,14 @@ public class Jorth {
 
 	/**
 	 * 加载核心词到词典中 仅仅在词典中添加核心词的空词，核心词是通过explain方法模拟执行
-	 * 
-	 * @param dict
 	 */
-	private void loadCoreWords(Dict dict) {
+	private void loadCoreWords() {
 		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "CREATE",
 				"ALLOT", "!", "@", "[", "]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE",
 				"PRINTWORD", "*", "/", ".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT",
 				"?<MARK", "?>RESOLVE", "?<RESOLVE" };
 		for (int x = 0; x < coreWordNames.length; x++) {
-			dict.add(new Word(coreWordNames[x], Word.Type.CORE));
+			this.dict.add(new Word(coreWordNames[x], Word.Type.CORE));
 		}
 
 	}
