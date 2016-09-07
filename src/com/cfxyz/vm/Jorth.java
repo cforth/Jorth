@@ -162,7 +162,7 @@ public class Jorth {
 				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
 				break; //退出当前执行的Word列表
 			}
-			this.ip++;
+			skipNextWord();
 		}
 	}
 
@@ -181,7 +181,7 @@ public class Jorth {
 			System.exit(0);
 		} else if ("LOAD".equals(symbol)) {
 			loadLib(nextSymbol); //从文件中加载Forth代码
-			this.ip++;
+			skipNextWord();
 		} else if ("READ".equals(symbol)) {
 			this.source = read(); //从输入流中读取一段Forth代码
 		} else if ("PARSE".equals(symbol)) {		
@@ -200,16 +200,16 @@ public class Jorth {
 			List<Word> varBuffer = new ArrayList<Word>();
 			varBuffer.add(new Word(String.valueOf(this.paramStack.pop())));
 			this.dict.getLastWord().setWplist(varBuffer);
-			this.ip++;
+			skipNextWord();
 		} else if ("VARIABLE".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.VAR)); // 在词典中添加一个新的变量
 			List<Word> varBuffer = new ArrayList<Word>();
 			varBuffer.add(new Word("0"));
 			this.dict.getLastWord().setWplist(varBuffer);
-			this.ip++;
+			skipNextWord();
 		} else if ("CREATE".equals(symbol)) { // 目前只能用于定义数组
 			this.dict.add(new Word(nextSymbol, Word.Type.ARRAY)); // 在词典中添加一个新的数组
-			this.ip++;
+			skipNextWord();
 		} else if ("ALLOT".equals(symbol)) { // 用来在数组中分配空间
 			int arraySize = this.paramStack.pop();
 			List<Word> arrayBuffer = new ArrayList<Word>();
@@ -272,14 +272,14 @@ public class Jorth {
 			this.out.print((char) (int) this.paramStack.pop());
 		} else if (".\"".equals(symbol)) { // 打印出后面字符串
 			this.out.print(nextSymbol.replace("\"", ""));
-			this.ip++;
+			skipNextWord();
 		} else if ("R>".equals(symbol)) {
 			this.paramStack.push(this.returnStack.pop());
 		} else if (">R".equals(symbol)) {
 			this.returnStack.push(this.paramStack.pop());
 		} else if ("SEE".equals(symbol)) {
 			this.out.println(this.dict.findByName(nextSymbol));
-			this.ip++;
+			skipNextWord();
 		} else if ("SIZE".equals(symbol)) { // 词典长度
 			this.paramStack.push(this.dict.size());
 		} else if ("PRINTWORD".equals(symbol)) { // 将栈顶数字作为词典中词的下标，打印出词的名称
@@ -291,13 +291,13 @@ public class Jorth {
 			this.out.println("RS> " + this.returnStack.toString());
 		} else if (":".equals(symbol)) {
 			this.dict.add(new Word(nextSymbol, Word.Type.REVEAL, new ArrayList<Word>())); // 在词典中添加一个新的冒号词
-			this.ip++;
+			skipNextWord();
 			this.state = State.compile;
 		} else if ("?BRANCH".equals(symbol)) {
 			if (this.paramStack.pop() == 0) {
 				this.ip += Integer.parseInt(nextSymbol);
 			} else {
-				this.ip++; // 跳过下面一个位置
+				skipNextWord(); // 跳过下面一个位置
 			}
 		} else if ("BRANCH".equals(symbol)) {
 			this.ip += Integer.parseInt(nextSymbol);
@@ -305,7 +305,7 @@ public class Jorth {
 			this.dict.getLastWord().setType(Word.Type.IMMEDIATE);
 		} else if ("COMPILE".equals(symbol)) {
 			compile(this.next);
-			this.ip++;
+			skipNextWord();
 		} else if ("?>MARK".equals(symbol)) {
 			this.paramStack.push(lastWordWplist.size());
 			this.paramStack.push(0); // 在参数栈留下标记
@@ -349,7 +349,7 @@ public class Jorth {
 		} else if (".\"".equals(symbol)) {
 			lastWordWplist.add(this.dict.findByName(".\""));
 			lastWordWplist.add(this.next); // 如果是字符串常量，就编译进词典中
-			this.ip++;
+			skipNextWord();
 		} else if (";".equals(symbol)) {
 			lastWordWplist.add(this.dict.findByName("END"));
 			this.state = State.explain;
@@ -438,6 +438,13 @@ public class Jorth {
 			this.out.println("读取文件内容出错");
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * 跳过Word列表中的下一个Word词
+	 */
+	private void skipNextWord() {
+		this.ip++;
 	}
 	
 	/**
