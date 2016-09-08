@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class Jorth {
+public class VirtualMachine {
 	private Stack<Integer> paramStack; // 参数栈
 	private Stack<Integer> returnStack; // 返回栈
 	private Dict dict; // 词典
@@ -27,7 +27,7 @@ public class Jorth {
 	/**
 	 * Forth的虚拟机初始化
 	 */
-	public Jorth() {
+	public VirtualMachine() {
 		this.paramStack = new Stack<Integer>();
 		this.returnStack = new Stack<Integer>();
 		this.dict = new Dict();
@@ -39,7 +39,7 @@ public class Jorth {
 	/**
 	 * Forth的虚拟机初始化，指定输出流
 	 */
-	public Jorth(InputStream input, OutputStream output) {
+	public VirtualMachine(InputStream input, OutputStream output) {
 		this.paramStack = new Stack<Integer>();
 		this.returnStack = new Stack<Integer>();
 		this.dict = new Dict();
@@ -47,26 +47,58 @@ public class Jorth {
 		this.localReader = new BufferedReader(new InputStreamReader(input));
 		this.out = new PrintStream(output);
 	}
-
+	
 	/**
-	 * Forth的解释程序
-	 * 
-	 * @param str
+	 * 加载核心词到词典中 仅仅在词典中添加核心词的空词，核心词是通过explain方法模拟执行
 	 */
-	public void interpret(String str) {
-		this.source = str;
-		parse(this.source);
-		run(this.wordListBuffer);
+	private void loadCoreWords() {
+		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "CREATE",
+				"ALLOT", "!", "@", "[", "]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE",
+				"PRINTWORD", "*", "/", ".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT",
+				"?<MARK", "?>RESOLVE", "?<RESOLVE", "QUERY", "LOADFILE" };
+		for (int x = 0; x < coreWordNames.length; x++) {
+			this.dict.add(new Word(coreWordNames[x], Word.Type.CORE));
+		}
 
 	}
 	
 	/**
-	 * 将一行源代码字符串进行词法分析
-	 * 
-	 * @param line
-	 * @return 返回Forth词列表
+	 * 从输入流中读取Forth代码，冒号词可以跨行定义
+	 * @return 一行合法的Forth代码
 	 */
-	public List<String> getTokens(String line) {
+	private String read() {
+		String lineTxt = null;
+		boolean colonFlag = false; // 处理冒号词换行定义
+		String colonTxt = "";
+		try {
+			while ((lineTxt = this.localReader.readLine()) != null) {
+				//冒号词允许换行定义
+				if (!lineTxt.contains(":") && !lineTxt.contains(";") && !colonFlag
+						|| lineTxt.contains(":") && lineTxt.contains(";")) {
+					return lineTxt;
+				} else if (lineTxt.contains(":")) {
+					colonFlag = true;
+					colonTxt = lineTxt;
+				} else if (lineTxt.contains(";")) {
+					colonTxt = colonTxt + " " + lineTxt;
+					return colonTxt;
+				} else if (colonFlag) {
+					colonTxt = colonTxt + " " + lineTxt;
+
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return lineTxt;
+	}
+	
+	/**
+	 * 将一行Forth代码转换为Word列表，存入this.wordListBuffer中
+	 * 
+	 * @param line 一行合法的Forth代码
+	 */
+	private List<Word> getTokens(String line) {
 		line = line.replaceAll("\\(\\s[^)]*\\)", ""); //将源代码中的括号注释删除
 		List<String> tokens = new ArrayList<String>();
 
@@ -114,56 +146,19 @@ public class Jorth {
 			}
 		}
 
-		return tokens;
-	}
-	
-	/**
-	 * 将一行Forth代码转换为Word列表
-	 * 
-	 * @param line
-	 */
-	public void parse(String line) {
-		//this.out.println("【执行语句】" + line);
-
-		List<String> tokens = getTokens(line);
-		this.wordListBuffer = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作
+		List<Word> wordList = new ArrayList<Word>(); // 将解析后的代码存放在代码区中的，供IP指针操作
 		// 文本解释器分离出一行源代码中的每个词，建立一个Word列表
 		for (String s : tokens) {
 			Word w = this.dict.findByName(s);
 			if (w != null) {
-				this.wordListBuffer.add(w);
+				wordList.add(w);
 			} else { // 如果词典中没有该词，则新建一个临时词来存放
-				this.wordListBuffer.add(new Word(s));
+				wordList.add(new Word(s));
 			}
 		}
-		this.wordListBuffer.add(this.dict.findByName("END"));
-	}
-
-	/**
-	 * 将Word列表执行
-	 * 
-	 * @param ipList
-	 * @return
-	 */
-	public void run(List<Word> ipList) {
-		this.state = State.explain;
-		this.ip = 0;
-		while (this.ip < ipList.size() - 1) {
-			this.next = ipList.get(this.ip + 1);
-			if (State.explain.equals(this.state)) {
-				this.explain((ipList.get(this.ip)));
-			} else if (State.compile.equals(this.state)) {
-				this.compile((ipList.get(this.ip)));
-			}
-
-			if (State.error.equals(this.state)) {
-				this.paramStack.clear();
-				this.out.println("ERROR! -> " + this.source);
-				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
-				break; //退出当前执行的Word列表
-			}
-			skipNextWord();
-		}
+		wordList.add(this.dict.findByName("END"));
+		
+		return wordList;
 	}
 
 	/**
@@ -171,7 +166,7 @@ public class Jorth {
 	 * 
 	 * @param now
 	 */
-	public void explain(Word now) {
+	private void explain(Word now) {
 		String symbol = now.getName();
 		String nextSymbol = this.next.getName();
 		List<Word> lastWordWplist = this.dict.getLastWord().getWplist();
@@ -179,17 +174,16 @@ public class Jorth {
 			this.paramStack.push(Integer.parseInt(symbol));
 		} else if ("BYE".equals(symbol)) {
 			System.exit(0);
-		} else if ("LOAD".equals(symbol)) {
+		} else if ("LOADFILE".equals(symbol)) {
 			loadLib(nextSymbol); //从文件中加载Forth代码
 			skipNextWord();
-		} else if ("READ".equals(symbol)) {
-			this.source = read(); //从输入流中读取一段Forth代码
-		} else if ("PARSE".equals(symbol)) {		
+		} else if ("QUERY".equals(symbol)) {
+			this.source = read(); //从输入流中读取一段Forth代码		
 			if(this.source == null) {
 				this.out.println("【程序退出】");
 				System.exit(-1);  //如果到达输入流尾端，则退出主循环
 			} else {
-				parse(this.source);
+				this.wordListBuffer = getTokens(this.source);
 			}
 		} else if ("RUN".equals(symbol)) {
 			this.returnStack.push(this.ip); // 设置返回地址
@@ -341,7 +335,7 @@ public class Jorth {
 	 * 编译当前Word词
 	 * @param now
 	 */
-	public void compile(Word now) {
+	private void compile(Word now) {
 		String symbol = now.getName();
 		List<Word> lastWordWplist = this.dict.getLastWord().getWplist();
 		if (symbol.matches("-?\\d+")) { // 如果是数字就编译成数字常数
@@ -369,47 +363,41 @@ public class Jorth {
 	}
 	
 	/**
-	 * 从输入流中读取Forth代码，冒号词可以跨行定义
-	 * @return 一行可以合法的Forth代码
+	 * 将Word列表执行
+	 * 
+	 * @param ipList
+	 * @return
 	 */
-	private String read() {
-		String lineTxt = null;
-		boolean colonFlag = false; // 处理冒号词换行定义
-		String colonTxt = "";
-		try {
-			while ((lineTxt = this.localReader.readLine()) != null) {
-				//冒号词允许换行定义
-				if (!lineTxt.contains(":") && !lineTxt.contains(";") && !colonFlag
-						|| lineTxt.contains(":") && lineTxt.contains(";")) {
-					return lineTxt;
-				} else if (lineTxt.contains(":")) {
-					colonFlag = true;
-					colonTxt = lineTxt;
-				} else if (lineTxt.contains(";")) {
-					colonTxt = colonTxt + " " + lineTxt;
-					return colonTxt;
-				} else if (colonFlag) {
-					colonTxt = colonTxt + " " + lineTxt;
-
-				}
+	private void run(List<Word> ipList) {
+		this.state = State.explain;
+		this.ip = 0;
+		while (this.ip < ipList.size() - 1) {
+			this.next = ipList.get(this.ip + 1);
+			if (State.explain.equals(this.state)) {
+				this.explain((ipList.get(this.ip)));
+			} else if (State.compile.equals(this.state)) {
+				this.compile((ipList.get(this.ip)));
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+
+			if (State.error.equals(this.state)) {
+				this.paramStack.clear();
+				this.out.println("ERROR! -> " + this.source);
+				this.state = State.explain; // 将状态切换回解释态，用于错误恢复
+				break; //退出当前执行的Word列表
+			}
+			skipNextWord();
 		}
-		return lineTxt;
 	}
 
 	/**
-	 * 加载核心词到词典中 仅仅在词典中添加核心词的空词，核心词是通过explain方法模拟执行
+	 * Forth的代码加载程序
+	 * 用于读取Forth库文件后启动Forth解释器的主循环
+	 * @param str 单行合法的Forth代码
 	 */
-	private void loadCoreWords() {
-		String[] coreWordNames = { "END", "BYE", "PICK", "ROLL", "PARSE", "RUN", "CONSTANT", "VARIABLE", "CREATE",
-				"ALLOT", "!", "@", "[", "]", "+", "-", "DROP", ">", "<", "=", "R>", ">R", ".", ".\"", "SEE", "SIZE",
-				"PRINTWORD", "*", "/", ".s", ":", ";", "?BRANCH", "BRANCH", "IMMEDIATE", "COMPILE", "?>MARK", "EMIT",
-				"?<MARK", "?>RESOLVE", "?<RESOLVE", "READ", "LOAD" };
-		for (int x = 0; x < coreWordNames.length; x++) {
-			this.dict.add(new Word(coreWordNames[x], Word.Type.CORE));
-		}
+	public void load(String str) {
+		this.source = str;
+		this.wordListBuffer = getTokens(this.source);
+		run(this.wordListBuffer);
 
 	}
 	
@@ -417,7 +405,8 @@ public class Jorth {
 	 * 从文件中读取Forth源代码，支持冒号词的换行定义
 	 * @param filePath 源代码文件的路径
 	 */
-	public void loadLib(String filePath) {
+	private void loadLib(String filePath) {
+		String line;
 		try {
 			String encoding = "UTF-8";
 			File file = new File(filePath);
@@ -425,8 +414,8 @@ public class Jorth {
 				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);// 考虑到编码格式
 				BufferedReader vmReader = this.localReader; //先保存虚拟机的localReader
 				this.localReader = new BufferedReader(read);
-				while((this.source = read()) != null) {
-					this.interpret(this.source);
+				while((line = read()) != null) {
+					this.load(line);
 				}
 				
 				read.close();
@@ -452,26 +441,5 @@ public class Jorth {
 	 */
 	private enum State {
 		explain, compile, error
-	}
-
-	public Stack<Integer> getParamStack() {
-		return paramStack;
-	}
-
-	public Stack<Integer> getReturnStack() {
-		return returnStack;
-	}
-
-	public Dict getDict() {
-		return dict;
-	}
-
-	public void setDict(Dict dict) {
-		this.dict = dict;
-	}
-
-	public void printStack() {
-		this.out.println("【参数栈】" + this.getParamStack().toString());
-		this.out.println("【返回栈】" + this.getReturnStack().toString());
 	}
 }

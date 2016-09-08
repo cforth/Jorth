@@ -55,12 +55,11 @@
 		R> R> DUP PRINTWORD SPACE SPACE >R >R
 	LOOP CR ." (Dictionary End)" CR ;
 
-: INTERPRET ( -- ForthMainLoop)
+: QUIT ( -- ForthMainLoop)
 	." (MAIN_LOOP START)" CR
 	BEGIN
 		." >"
-		READ
-		PARSE
+		QUERY
 		RUN
 		FALSE
 	UNTIL ;
